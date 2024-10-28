@@ -1,12 +1,12 @@
 import socket
 import sys
-# TODO: Typed variable 
+import yaml
 
-def parse_config(config_file):
+
+def parse_config(config_file) -> dict :
     try:
         with open(config_file, "r") as f:
-            config = f.readlines()
-            print(config)
+            config = yaml.safe_load(f)
     except FileNotFoundError:
         print(f"Config file not found: {config_file}")
         sys.exit(1)
@@ -45,8 +45,35 @@ def start_server():
                     conn.sendall(f"Server received: {data.decode()}".encode())
 
 
+def check_config(config: dict) -> bool:
+    if not config:
+        print("Config file is empty")
+        return False
+    if not config.get("programs"):
+        print("Config file is missing 'programs' field")
+        return False
+    # print(config["programs"]["nginx"].keys())
+    print(isinstance(config["programs"][], dict))
+    required_fields = ["programs"]
+    for field in required_fields:
+        if field not in config:
+            print(f"Config file is missing required field: {field}")
+            return False
+    return True
+
+
+def taskmaster():
+    config: dict = parse_config(sys.argv[1])
+    if check_config(config):
+        # start_server()
+        pass
+    else:
+        print("Config file is invalid")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python server.py <config_file>")
         sys.exit(1)
-    parse_config(sys.argv[1])
+    taskmaster()

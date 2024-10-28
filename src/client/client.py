@@ -1,9 +1,11 @@
 import socket
+import sys
 
 
-def start_client():
+def start_client(args):
     host = "127.0.0.1"  # The server's hostname or IP address
     port = 65432  # The port used by the server
+    required_fields = ['command']
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
@@ -28,4 +30,4 @@ def start_client():
 
 
 if __name__ == "__main__":
-    start_client()
+    start_client(sys.argv)
