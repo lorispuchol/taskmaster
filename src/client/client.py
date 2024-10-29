@@ -5,7 +5,6 @@ import sys
 def start_client(args):
     host = "127.0.0.1"  # The server's hostname or IP address
     port = 65432  # The port used by the server
-    required_fields = ['command']
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:

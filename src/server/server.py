@@ -3,7 +3,7 @@ import sys
 import yaml
 
 
-def parse_config(config_file) -> dict :
+def parse_config(config_file) -> dict:
     try:
         with open(config_file, "r") as f:
             config = yaml.safe_load(f)
@@ -46,24 +46,32 @@ def start_server():
 
 
 def check_config(config: dict) -> bool:
-    if not config:
-        print("Config file is empty")
-        return False
-    if not config.get("programs"):
-        print("Config file is missing 'programs' field")
-        return False
-    # print(config["programs"]["nginx"].keys())
-    print(isinstance(config["programs"][], dict))
+
     required_fields = ["programs"]
+
+    if not config:
+        print("ERROR: Config file\nConfig file is empty")
+        return False
+
+    if not isinstance(config, dict):
+        print("ERROR: Config file\nConfig file must start by an object")
+        return False
+
     for field in required_fields:
         if field not in config:
-            print(f"Config file is missing required field: {field}")
+            print(f"ERROR: Config file\nConfig file is missing required field: {field}")
             return False
+
+    if not isinstance(config["programs"], dict):
+        print("ERROR: Config file\n'programs' field must be one or more objects")
+        return False
+
     return True
 
 
 def taskmaster():
     config: dict = parse_config(sys.argv[1])
+    print(config)
     if check_config(config):
         # start_server()
         pass
