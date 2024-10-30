@@ -1,2 +1,2 @@
 config: dict = {}
-programs: list[dict] = [{"key": "val1"}]
+programs: list[dict] = [{}]

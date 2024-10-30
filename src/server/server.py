@@ -1,40 +1,62 @@
+import selectors
 import socket
-from shared.global_variables import programs, config
+import sys
+
+HOST = "127.0.0.1"
+PORT = 65432
+
+
+def accept_wrapper(sock):
+    conn, addr = sock.accept()
+    print(f"Connected by {addr}")
+    conn.setblocking(False)
+    sel.register(conn, selectors.EVENT_READ, data=addr)
+
+
+def service_connection(key, mask):
+    sock = key.fileobj
+    addr = key.data
+    if mask & selectors.EVENT_READ:
+        data = sock.recv(1024)
+        if data.strip() == "":  # Check if only Enter is pressed or message is empty/whitespace
+            print(f"Empty message received from {addr}")
+            sock.sendall("Empty message received. Please send something meaningful.\n".encode())
+        elif data:
+            print(f"Received: {data.decode()} from {addr}")
+            sock.sendall(f"Server received: {data.decode()}".encode())
+        else:
+            print(f"Closing connection to {addr}")
+            sel.unregister(sock)
+            sock.close()
+
+
+sel = selectors.DefaultSelector()
 
 
 def start_server():
-    try:
-        host = "127.0.0.1"  # localhost
-        port = 65432  # Port to listen on (non-privileged ports are > 1023)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        s.setblocking(False)
+        sel.register(s, selectors.EVENT_READ, data=None)
+        print(f"Server listening on {HOST}:{PORT}")
 
-        # AF_INET is the address family for IPv4
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            # Bind the socket to the address and port
-            s.bind((host, port))
-            # Enable the server to accept connections
-            s.listen()
-            print(f"Server listening on {host}:{port}")
-
+        try:
             while True:
-                # Accept a connection from a client
-                # conn is a new socket object usable to send and receive data on the connection
-                # addr is the address bound to the socket on the other end of the connection.
-                (conn, addr) = s.accept()
-                with conn:
-                    print(f"Connected by {addr}")
-                    while True:
-                        data = conn.recv(1024)
-                        if not data:
-                            break
-                        print(f"Received: {data.decode()}")
-                        conn.sendall(f"Server received: {data.decode()}".encode())
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    except KeyboardInterrupt:
-        print("\nExiting taskmaster")
-    finally:
-        s.close()
-        print("Server closed")
+                events = sel.select(timeout=None)
+                for key, mask in events:
+                    if key.data is None:
+                        accept_wrapper(key.fileobj)
+                    else:
+                        service_connection(key, mask)
+        except KeyboardInterrupt:
+            print("\nExiting taskmaster")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        finally:
+            sel.close()
+            s.close()
+            print("Server closed")
 
 
 if __name__ == "__main__":

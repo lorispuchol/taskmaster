@@ -1,10 +1,18 @@
 import sys
 import yaml
 from server.server import start_server
-from shared.global_variables import programs, config
+from shared.global_variables import config
 
 
-def parse_config(config_file) -> dict:
+def parse_config(config_file: str) -> dict:
+    """Parses a YAML configuration file into a dict.
+
+    Args:
+        config_file (str): The path to the YAML configuration file.
+
+    Returns:
+        dict: The parsed configuration.
+    """
     with open(config_file, "r") as f:
         global config
         config = yaml.safe_load(f)
@@ -14,6 +22,18 @@ def parse_config(config_file) -> dict:
 
 def check_config(conf: dict):
 
+    """
+    Checks if the given configuration is valid.
+
+    Args:
+        conf (dict): The configuration to check.
+
+    Raises:
+        Exception: If the configuration is invalid.
+
+    Returns:
+        bool: True if the configuration is valid, False otherwise.
+    """
     required_fields = ["programs"]
 
     if not conf:
@@ -29,6 +49,7 @@ def check_config(conf: dict):
 
 
 def taskmaster():
+    global config
     try:
         config = parse_config(sys.argv[1])
         check_config(config)
