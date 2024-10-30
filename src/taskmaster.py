@@ -21,7 +21,6 @@ def parse_config(config_file: str) -> dict:
 
 
 def check_config(conf: dict):
-
     """
     Checks if the given configuration is valid.
 
@@ -52,6 +51,7 @@ def taskmaster():
     global config
     try:
         config = parse_config(sys.argv[1])
+        print(config)
         check_config(config)
     except Exception as e:
         print(f"ERROR: {e}")

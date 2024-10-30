@@ -1,9 +1,10 @@
 import selectors
 import socket
-import sys
 
 HOST = "127.0.0.1"
 PORT = 65432
+
+clients: list = []
 
 
 def accept_wrapper(sock):
@@ -11,6 +12,7 @@ def accept_wrapper(sock):
     print(f"Connected by {addr}")
     conn.setblocking(False)
     sel.register(conn, selectors.EVENT_READ, data=addr)
+    return conn
 
 
 def service_connection(key, mask):
@@ -18,9 +20,13 @@ def service_connection(key, mask):
     addr = key.data
     if mask & selectors.EVENT_READ:
         data = sock.recv(1024)
-        if data.strip() == "":  # Check if only Enter is pressed or message is empty/whitespace
+        if (
+            data.strip() == ""
+        ):  # Check if only Enter is pressed or message is empty/whitespace
             print(f"Empty message received from {addr}")
-            sock.sendall("Empty message received. Please send something meaningful.\n".encode())
+            sock.sendall(
+                "Empty message received. Please send something meaningful.\n".encode()
+            )
         elif data:
             print(f"Received: {data.decode()} from {addr}")
             sock.sendall(f"Server received: {data.decode()}".encode())
@@ -28,6 +34,7 @@ def service_connection(key, mask):
             print(f"Closing connection to {addr}")
             sel.unregister(sock)
             sock.close()
+            clients.remove(sock)
 
 
 sel = selectors.DefaultSelector()
@@ -46,7 +53,7 @@ def start_server():
                 events = sel.select(timeout=None)
                 for key, mask in events:
                     if key.data is None:
-                        accept_wrapper(key.fileobj)
+                        clients.append(accept_wrapper(key.fileobj))
                     else:
                         service_connection(key, mask)
         except KeyboardInterrupt:
@@ -54,6 +61,12 @@ def start_server():
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         finally:
+            for client in clients:
+                sock = key.fileobj
+                sock.sendall("close you".encode())
+                client.shutdown(socket.SHUT_RDWR)
+                client.close()
+            s.shutdown(socket.SHUT_RDWR)
             sel.close()
             s.close()
             print("Server closed")

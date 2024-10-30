@@ -14,11 +14,17 @@ def start_client(args):
             print(f"Connected to server at {HOST}:{PORT}")
             while True:
                 message = input("Enter message to send (or 'quit' to exit): ")
+                if not message:
+                    continue
                 if message.lower() == "quit":
                     break
                 s.sendall(message.encode())
                 data = s.recv(1024)
                 print(f"Received from server: {data.decode()}")
+                if (data.decode() == "close you"):
+                    s.shutdown(socket.SHUT_RDWR)
+                    s.close()
+                    print("Connection closed")
     except socket.gaierror as e:
         print(f"Address-related error connecting to server: {e}")
     except socket.timeout as e:
@@ -29,7 +35,8 @@ def start_client(args):
         print(f"An unexpected error occurred: {e}")
     except KeyboardInterrupt:
         print("\nExiting...")
-        sys.exit(0)
+    finally:
+        s.close()
 
 
 if __name__ == "__main__":
