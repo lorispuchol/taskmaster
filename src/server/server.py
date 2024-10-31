@@ -1,76 +1,100 @@
-import selectors
+# multiconn-server.py
+
+import sys
 import socket
-
-HOST = "127.0.0.1"
-PORT = 65432
-
-clients: list = []
-
-
-def accept_wrapper(sock):
-    conn, addr = sock.accept()
-    print(f"Connected by {addr}")
-    conn.setblocking(False)
-    sel.register(conn, selectors.EVENT_READ, data=addr)
-    return conn
-
-
-def service_connection(key, mask):
-    sock = key.fileobj
-    addr = key.data
-    if mask & selectors.EVENT_READ:
-        data = sock.recv(1024)
-        if (
-            data.strip() == ""
-        ):  # Check if only Enter is pressed or message is empty/whitespace
-            print(f"Empty message received from {addr}")
-            sock.sendall(
-                "Empty message received. Please send something meaningful.\n".encode()
-            )
-        elif data:
-            print(f"Received: {data.decode()} from {addr}")
-            sock.sendall(f"Server received: {data.decode()}".encode())
-        else:
-            print(f"Closing connection to {addr}")
-            sel.unregister(sock)
-            sock.close()
-            clients.remove(sock)
+import selectors
+import types
+import subprocess
 
 
 sel = selectors.DefaultSelector()
 
+host = "127.0.0.1"
+port = 65432
+
+# multiconn-server.py
+
+# ...
+
+clients = []
+
+def accept_wrapper(sock):
+    conn, addr = sock.accept()  # Should be ready to read
+    print(f"Accepted connection from {addr}")
+    conn.setblocking(False)
+    data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
+    events = selectors.EVENT_READ | selectors.EVENT_WRITE
+    sel.register(conn, events, data=data)
+    global clients
+    clients.append((conn, sock))
+    print(f"clis: {(clients)}")
+
+
+def service_connection(key, mask):
+    sock = key.fileobj
+    data = key.data
+    if mask & selectors.EVENT_READ:
+        recv_data = sock.recv(1024)  # Should be ready to read
+        if recv_data:
+            data.outb += recv_data
+        else:
+            print(f"Closing connection to {data.addr}")
+            sel.unregister(sock)
+            sock.close()
+    if mask & selectors.EVENT_WRITE:
+        if data.outb:
+            print(f"Echoing {data.outb!r} to {data.addr}")
+            sent = sock.send(data.outb)  # Should be ready to write
+            data.outb = data.outb[sent:]
+
+
+def kill_clients():
+
+    global port
+
+    try:
+        # Get the process ID(s) using lsof
+        result = subprocess.check_output(["lsof", "-ti", f"tcp:{port}"])
+        pids = result.decode().strip().split('\n')
+
+        # Kill each process ID
+        for pid in pids:
+            subprocess.run(["kill", pid])
+            print(f"Killed process {pid} on port {port}")
+
+    except subprocess.CalledProcessError:
+        print(f"No process is running on port {port}")
 
 def start_server():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
-        s.listen()
-        s.setblocking(False)
-        sel.register(s, selectors.EVENT_READ, data=None)
-        print(f"Server listening on {HOST}:{PORT}")
+    lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    lsock.bind((host, port))
+    lsock.listen()
+    print(f"Listening on {(host, port)}")
+    lsock.setblocking(False)
+    sel.register(lsock, selectors.EVENT_READ, data=None)
 
-        try:
-            while True:
-                events = sel.select(timeout=None)
-                for key, mask in events:
-                    if key.data is None:
-                        clients.append(accept_wrapper(key.fileobj))
-                    else:
-                        service_connection(key, mask)
-        except KeyboardInterrupt:
-            print("\nExiting taskmaster")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-        finally:
-            for client in clients:
-                sock = key.fileobj
-                sock.sendall("close you".encode())
-                client.shutdown(socket.SHUT_RDWR)
-                client.close()
-            s.shutdown(socket.SHUT_RDWR)
-            sel.close()
-            s.close()
-            print("Server closed")
+    # multiconn-server.py
 
+    # ...
 
-if __name__ == "__main__":
-    start_server()
+    try:
+        while True:
+            events = sel.select(timeout=None)
+            for key, mask in events:
+                if key.data is None:
+                    accept_wrapper(key.fileobj)
+                else:
+                    service_connection(key, mask)
+    except KeyboardInterrupt:
+        print("\nCaught keyboard interrupt, exiting")
+
+    finally:
+        global clients
+        for client in clients:
+            print(f"Closing connection to {client}")
+            sel.unregister(client[1])
+            client[1].shutdown(socket.SHUT_RDWR)
+            (client[1]).close()
+            # kill_clients()
+        sel.close()
+        lsock.close()

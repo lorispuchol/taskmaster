@@ -51,7 +51,6 @@ def taskmaster():
     global config
     try:
         config = parse_config(sys.argv[1])
-        print(config)
         check_config(config)
     except Exception as e:
         print(f"ERROR: {e}")
