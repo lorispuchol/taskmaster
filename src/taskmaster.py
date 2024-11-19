@@ -1,7 +1,6 @@
 import sys
 import yaml
 from server.server import start_server
-from shared.global_variables import config
 
 
 def parse_config(config_file: str) -> dict:
@@ -49,17 +48,18 @@ def check_config(conf: dict):
 
 def taskmaster():
     global config
+
     try:
         config = parse_config(sys.argv[1])
         check_config(config)
     except Exception as e:
         print(f"ERROR: {e}")
         sys.exit(1)
-    start_server()
+    start_server("localhost", 65432)
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python server.py <config_file>")
+        print(f"Usage: {sys.argv[0]} <config_file>")
         sys.exit(1)
     taskmaster()
