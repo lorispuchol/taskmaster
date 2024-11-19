@@ -1,5 +1,7 @@
 import socket
 import sys
+import readline
+
 
 valid_commands = {
     "start": "Start the mentionned program present in the configuration file",
@@ -8,15 +10,24 @@ valid_commands = {
     "status": "Displays the status of all the programs present in the configuration file",
     "exit": "Close the connection",
     "help": "Display the list of valid commands with their description",
-    "reload": "Reload the configuration file (configuration is no updated if the file has been modified without post reload)",
-    "shutdown": "Shutdown the server"
+    "reload": "Reload the configuration (be careful to reload if the configuration file changed)",
+    "shutdown": "Shutdown the server",
 }
 
 
-def print_help():
+def print_short_help():
     print("Valid commands:")
     for cmd in valid_commands:
         print(f"\t{cmd}")
+
+
+def print_large_help():
+    print("Valid commands:")
+
+    max_command_length = max(len(cmd) for cmd in valid_commands)
+
+    for cmd, desc in valid_commands.items():
+        print(f"{cmd.ljust(max_command_length)}:\t {desc}")
 
 
 def validate_command(command: str) -> bool:
@@ -40,25 +51,26 @@ def start_client(server_ip: str, server_port: int):
             if not user_input:
                 continue
 
-            if user_input not in valid_commands:
-                print_help()
-                continue
+            readline.add_history(user_input)
 
-            if user_input.lower() == "exit":
+            if not validate_command(user_input):
+                print_short_help()
+            elif user_input == "exit":
                 print("Closing connection.")
                 break
+            elif user_input == "help":
+                print_large_help()
+            else:
+                # Send the input to the server
+                client_socket.sendall(user_input.encode("utf-8"))
 
-
-            # Send the input to the server
-            client_socket.sendall(user_input.encode("utf-8"))
-
-            # Optional: Receive and print server response
-            response = client_socket.recv(1024)
-            if not response:
-                print("Server closed the connection. Exiting...")
-                client_socket.close()
-                exit(0)
-            print(f"{response.decode('utf-8')}")
+                # Optional: Receive and print server response
+                response = client_socket.recv(1024)
+                if not response:
+                    print("Server closed the connection. Exiting")
+                    client_socket.close()
+                    exit(0)
+                print(f"{response.decode('utf-8')}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
