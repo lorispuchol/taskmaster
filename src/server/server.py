@@ -11,8 +11,10 @@ def parse_request(request) -> bool:
 
 
 def perform_request(request) -> bytes:
-    return b"ouuia"
-
+    str = b""
+    str += b"responnnnnnnse="
+    str += request
+    return str
 
 def accept_wrapper(sock):
     # since listening socket was registered for the event selectors.EVENT_READ, it should be
@@ -45,6 +47,7 @@ def service_connection(key, mask):
 
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # should be ready to read
+        print("received", repr(recv_data), "from", data.addr)
         if recv_data:
             parse_request(recv_data)
             data.outb += perform_request(recv_data)
@@ -116,7 +119,7 @@ try:
             else:
                 service_connection(key, mask)
 except KeyboardInterrupt:
-    print("caught keyboard interrupt, exiting")
+    print("\ncaught keyboard interrupt, exiting")
     lsock.shutdown(socket.SHUT_RDWR)
     lsock.close()
 
