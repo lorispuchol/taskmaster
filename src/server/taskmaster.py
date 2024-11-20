@@ -1,9 +1,11 @@
 import sys
 import yaml
-from server.server import start_server
+from .server import start_server
 
+config: dict = {}
+programs: list[dict] = []
 
-def parse_config(config_file: str) -> dict:
+def parse_file(config_file: str) -> dict:
     """Parses a YAML configuration file into a dict.
 
     Args:
@@ -50,7 +52,7 @@ def taskmaster():
     global config
 
     try:
-        config = parse_config(sys.argv[1])
+        config = parse_file(sys.argv[1])
         check_config(config)
     except Exception as e:
         print(f"ERROR: {e}")
@@ -63,3 +65,4 @@ if __name__ == "__main__":
         print(f"Usage: {sys.argv[0]} <config_file>")
         sys.exit(1)
     taskmaster()
+

@@ -50,6 +50,8 @@ def service_connection(key, mask):
             recv_data = sock.recv(1024)  # should be ready to read
             print("Received", repr(recv_data), "from", data.addr)
             if recv_data:
+                if recv_data == b"shutdown":
+                    raise Exception("Shutdown command received")
                 parse_request(recv_data)
                 data.outb += perform_request(recv_data)
                 # any data that's read is appended to data.outb so it can be sent later
@@ -78,6 +80,8 @@ def service_connection(key, mask):
         print(f"Connection was reset by peer: {data.addr}")
         sel.unregister(sock)
         sock.close()
+    except Exception as e:
+        raise e
 
 
 def start_server(host: str, port: int):
@@ -121,7 +125,9 @@ def start_server(host: str, port: int):
         print("\nCaught keyboard interrupt, Exiting")
         lsock.shutdown(socket.SHUT_RDWR)
         lsock.close()
-
+    except Exception as e:
+        print(f"{e}")
+        print(f"Exiting")
     finally:
         sel.close()
 
