@@ -54,10 +54,10 @@ def taskmaster():
     try:
         config = parse_file(sys.argv[1])
         check_config(config)
+        start_server("localhost", 65432)
     except Exception as e:
         print(f"ERROR: {e}")
         sys.exit(1)
-    start_server("localhost", 65432)
 
 
 if __name__ == "__main__":
