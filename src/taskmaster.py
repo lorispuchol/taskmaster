@@ -3,10 +3,9 @@ import yaml
 import readline
 import argparse
 
-
 from logger import logger
 
-# TODO: Typed variable 
+# TODO: Typed variable
 
 valid_cmds = {
     "start": "Start the mentionned program present in the configuration file",
@@ -17,8 +16,6 @@ valid_cmds = {
     "help": "Display the list of valid commands with their description",
     "reload": "Reload the configuration (be careful to reload when configuration file changed. Otherwise, changes will be ignored)",
 }
-
-
 config: dict = {}
 programs: list[dict] = []
 
@@ -44,7 +41,7 @@ def is_valid_cmd(cmd: str) -> bool:
     return cmd in valid_cmds
 
 
-def recover_config_file(config_file: str) -> dict:
+def load_config(config_file: str) -> dict:
     """Parses a YAML configuration file into a dict.
 
     Args:
@@ -57,8 +54,6 @@ def recover_config_file(config_file: str) -> dict:
         global config
         config = yaml.safe_load(f)
     print("Config file parsed successfully")
-    logger.warning("Config file parsed successfully")
-    return config
 
 
 def is_valid_config(conf: dict):
@@ -88,6 +83,26 @@ def is_valid_config(conf: dict):
     return True
 
 
+# Parse the command line wich run the taskmaster program
+def parse_cmd_line() -> tuple[str, str]:
+    parser = argparse.ArgumentParser(
+        description="Taskmaster is a program that manages other programs."
+    )
+    parser.add_argument(
+        "filename", type=str, help="The path to the configuration file."
+    )
+    parser.add_argument(
+        "-l",
+        "--loglevel",
+        help="Set the log level. INFO by default",
+        action="store",
+        default="INFO",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    )
+    args = parser.parse_args()
+    return args.filename, args.loglevel
+
 
 def wait_for_cmds():
     while True:
@@ -115,44 +130,18 @@ def perform_cmd(cmd: str):
 
 def taskmaster():
 
-    parser = argparse.ArgumentParser(description="Taskmaster is a program that manages other programs.")
-    parser.add_argument("filename", type=str, help="The path to the configuration file.",)
-    parser.add_argument("-l", "--loglevel", help="Set the log level. INFO by default", action="store", default="INFO", type=str, choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-    
-    args = parser.parse_args()
+    config_file, loglevel = parse_cmd_line()
 
-    logger.setLevel(args.loglevel.upper())
-
-    print(args.loglevel)
-    global config
+    logger.setLevel(loglevel)
 
     try:
-        config = recover_config_file(sys.argv[1])
+        load_config(config_file)  # Set the global variable config
         is_valid_config(config)
     except Exception as e:
         print(f"ERROR: {e}")
         sys.exit(1)
-
+    
 
 
 if __name__ == "__main__":
     taskmaster()
-
-
-# # Initialize the parser
-# parser = argparse.ArgumentParser(description="A script to demonstrate arguments.")
-
-# # Add arguments
-# parser.add_argument("-n", "--name", type=str, required=True, help="Your name.")
-# parser.add_argument("-a", "--age", type=int, help="Your age.")
-# parser.add_argument("--verbose", action="store_true", help="Enable verbose mode.")
-
-# # Parse arguments
-# args = parser.parse_args()
-
-# # Use the arguments
-# if args.verbose:
-#     print("Verbose mode is enabled.")
-# print(f"Hello, {args.name}!")
-# if args.age:
-#     print(f"You are {args.age} years old.")
