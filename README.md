@@ -2,6 +2,11 @@
 
 ### Useful commands
 
+#### setup venv
+```bash
+source setup-venv.sh
+```
+
 #### socket
 ```bash
 sudo lsof -i :<port>
