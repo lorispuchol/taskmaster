@@ -1,11 +1,23 @@
-import sys
 import yaml
-import readline
 import argparse
 
 from logger import logger
 
 # TODO: Typed variable
+
+
+class Master:
+    def __init__(
+        self, pathToConfigFile: str = "", loggerLevel: str = "DEBUG", conf: dict = {}
+    ):
+        self.configFile = pathToConfigFile
+        self.logLevel = loggerLevel
+        self.config: dict = conf
+        self.programs: list[Program] = []
+
+
+master = Master()
+
 
 valid_cmds = {
     "start": "Start the mentionned program present in the configuration file",
@@ -16,47 +28,12 @@ valid_cmds = {
     "help": "Display the list of valid commands with their description",
     "reload": "Reload the configuration (be careful to reload when configuration file changed. Otherwise, changes will be ignored)",
 }
-config: dict = {}
-programs: list[dict] = []
-
-def print_short_help():
-    """Prints the list of valid commands."""
-    print("Valid commands:")
-    for cmd in valid_cmds:
-        print(f"\t{cmd}")
 
 
-# get the command with the max length to align the description with other commands
-def print_large_help():
-    """Prints the list of valid commands with their description."""
-    print("Valid commands:")
-
-    max_cmd_length = max(len(cmd) for cmd in valid_cmds)
-
-    for cmd, desc in valid_cmds.items():
-        print(f"{cmd.ljust(max_cmd_length)}:\t {desc}")
+conf_required_fields = ["programs"]
 
 
-def is_valid_cmd(cmd: str) -> bool:
-    return cmd in valid_cmds
-
-
-def load_config(config_file: str) -> dict:
-    """Parses a YAML configuration file into a dict.
-
-    Args:
-        config_file (str): The path to the YAML configuration file.
-
-    Returns:
-        dict: The parsed configuration.
-    """
-    with open(config_file, "r") as f:
-        global config
-        config = yaml.safe_load(f)
-    print("Config file parsed successfully")
-
-
-def is_valid_config(conf: dict):
+def isValidConfig(conf: dict):
     """
     Checks if the given configuration is valid.
 
@@ -69,22 +46,36 @@ def is_valid_config(conf: dict):
     Returns:
         bool: True if the configuration is valid, False otherwise.
     """
-    required_fields = ["programs"]
 
     if not conf:
         raise Exception("Config file is empty")
     if not isinstance(conf, dict):
         raise Exception("Config file must start by an object")
-    for field in required_fields:
+    for field in conf_required_fields:
         if field not in conf:
-            raise Exception(f"Config file is missing required field: {field}")
+            raise Exception(f"Config file is missing required field: '{field}'")
     if not isinstance(conf["programs"], dict):
-        raise Exception("Config file 'programs' field must be an object")
+        raise Exception("Config file: 'programs' field must be an object")
     return True
 
 
-# Parse the command line wich run the taskmaster program
-def parse_cmd_line() -> tuple[str, str]:
+def loadConfig(configFile: str) -> dict:
+    """Parses a YAML configuration file into a dict.
+
+    Args:
+        configFile (str): The path to the YAML configuration file.
+
+    Returns:
+        dict: The parsed configuration.
+    """
+    with open(configFile, "r") as f:
+        config: dict = yaml.safe_load(f)
+    logger.info("Config file loaded successfully")
+    return config
+
+
+# Parse how taskmaster is launched
+def kickoff() -> tuple[str, str]:
     parser = argparse.ArgumentParser(
         description="Taskmaster is a program that manages other programs."
     )
@@ -93,54 +84,34 @@ def parse_cmd_line() -> tuple[str, str]:
     )
     parser.add_argument(
         "-l",
-        "--loglevel",
-        help="Set the log level. INFO by default",
+        "--logLevel",
+        help="Set the log level. INFO if not specified.",
         action="store",
         default="INFO",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
     args = parser.parse_args()
-    return args.filename, args.loglevel
+    return args.filename, args.logLevel
 
 
-def wait_for_cmds():
-    while True:
-        user_input: str = input("taskmaster> (type 'help'): ")
-
-        if not user_input:
-            continue
-
-        readline.add_history(user_input)
-
-        if not is_valid_cmd(user_input):
-            print_short_help()
-        elif user_input == "exit":
-            print("Closing connection.")
-            break
-        elif user_input == "help":
-            print_large_help()
-        else:
-            perform_cmd(user_input)
-
-
-def perform_cmd(cmd: str):
-    print(f"Performing command: {cmd}")
-
-
+# logLevel: INFO if not specified
 def taskmaster():
 
-    config_file, loglevel = parse_cmd_line()
+    global master
 
-    logger.setLevel(loglevel)
+    configFile, logLevel = kickoff()
+    logger.setLevel(logLevel)
 
     try:
-        load_config(config_file)  # Set the global variable config
-        is_valid_config(config)
+        config = loadConfig(configFile)
+        isValidConfig(config)
     except Exception as e:
-        print(f"ERROR: {e}")
-        sys.exit(1)
-    
+        logger.error(e)
+        logger.info("Exiting taskmaster")
+        return 1
+
+    master = Master(configFile, logLevel, config)
 
 
 if __name__ == "__main__":
