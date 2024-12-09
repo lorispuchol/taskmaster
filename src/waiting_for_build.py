@@ -1,5 +1,14 @@
 import readline
 
+valid_cmds = {
+    "start": "Start the mentionned program present in the configuration file",
+    "stop": "Stop the mentionned program present in the configuration file",
+    "restart": "Restart the mentionned program present in the configuration file",
+    "status": "Displays the status of all the programs present in the configuration file",
+    "exit": "Exit the main program",
+    "help": "Display the list of valid commands with their description",
+    "reload": "Reload the configuration (be careful to reload when configuration file changed. Otherwise, changes will be ignored)",
+}
 
 def print_short_help():
     """Prints the list of valid commands."""

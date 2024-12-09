@@ -1,5 +1,6 @@
 import yaml
 import argparse
+import signal
 
 from logger import logger
 
@@ -8,7 +9,10 @@ from logger import logger
 
 class Master:
     def __init__(
-        self, pathToConfigFile: str = "", loggerLevel: str = "DEBUG", conf: dict = {}
+        self,
+        pathToConfigFile: str = "",
+        loggerLevel: str = "DEBUG",
+        conf: dict = {}
     ):
         self.configFile = pathToConfigFile
         self.logLevel = loggerLevel
@@ -19,21 +23,32 @@ class Master:
 master = Master()
 
 
-valid_cmds = {
-    "start": "Start the mentionned program present in the configuration file",
-    "stop": "Stop the mentionned program present in the configuration file",
-    "restart": "Restart the mentionned program present in the configuration file",
-    "status": "Displays the status of all the programs present in the configuration file",
-    "exit": "Exit the main program",
-    "help": "Display the list of valid commands with their description",
-    "reload": "Reload the configuration (be careful to reload when configuration file changed. Otherwise, changes will be ignored)",
-}
+def exit_taskmaster(sig, frame) -> None:
+    logger.error("Received SIGINT")
+    logger.info("Exiting taskmaster")
+    # TODO : Stop all programs
 
 
-conf_required_fields = ["programs"]
+def reload_config(sig, frame) -> None:
+    logger.info("Received SIGHUP")
+    logger.info("Reloading config")
+
+    tmp_conf = load_config(master.configFile)
+    if not is_valid_config(tmp_conf):
+        logger.info("Exiting taskmaster")
+        exit(1)
+    # TODO : Update programs
+    master.config = tmp_conf
 
 
-def isValidConfig(conf: dict):
+def init_signals() -> None:
+    signal.signal(signal.SIGINT, exit_taskmaster)
+    signal.signal(signal.SIGHUP, reload_config)
+    signal.signal(signal.SIGABRT reload_config)
+
+
+
+def is_valid_config(conf: dict) -> bool:
     """
     Checks if the given configuration is valid.
 
@@ -47,19 +62,35 @@ def isValidConfig(conf: dict):
         bool: True if the configuration is valid, False otherwise.
     """
 
+    conf_required_fields = ["programs"]
+
+    # Check if the config is valid with 'programs' field
     if not conf:
-        raise Exception("Config file is empty")
+        logger.error("Config file is empty")
+        return False
     if not isinstance(conf, dict):
-        raise Exception("Config file must start by an object")
+        logger.error("Config file must start by an object. No list or string allowed")
+        return False
     for field in conf_required_fields:
         if field not in conf:
-            raise Exception(f"Config file is missing required field: '{field}'")
-    if not isinstance(conf["programs"], dict):
-        raise Exception("Config file: 'programs' field must be an object")
+            logger.error(f"Config file is missing required field: '{field}'")
+            return False
+
+    # Check if the 'programs' field is valid object
+    if not isinstance(conf["programs"], dict) or not conf["programs"]:
+        logger.error("Config file: 'programs' field must be an object. No program to manage")
+        return False
+
+    # if not conf["programs"]:
+    #     raise Exception("Config file: 'programs' field must not be empty")
+    # if not all(isinstance(program, dict) for program in conf["programs"].values()):
+    #     raise Exception("Config file: 'programs' field must contain only objects")
+
+    logger.info("Config updated successfully")
     return True
 
 
-def loadConfig(configFile: str) -> dict:
+def load_config(configFile: str) -> dict:
     """Parses a YAML configuration file into a dict.
 
     Args:
@@ -70,11 +101,12 @@ def loadConfig(configFile: str) -> dict:
     """
     with open(configFile, "r") as f:
         config: dict = yaml.safe_load(f)
-    logger.info("Config file loaded successfully")
+    logger.info("Config file updating...")
+    print(config)
     return config
 
 
-# Parse how taskmaster is launched
+# Parse taskmaster's launching command
 def kickoff() -> tuple[str, str]:
     parser = argparse.ArgumentParser(
         description="Taskmaster is a program that manages other programs."
@@ -95,24 +127,33 @@ def kickoff() -> tuple[str, str]:
     return args.filename, args.logLevel
 
 
-# logLevel: INFO if not specified
-def taskmaster():
+# log_level=INFO if not specified
+def taskmaster() -> int:
 
     global master
 
-    configFile, logLevel = kickoff()
-    logger.setLevel(logLevel)
+    config_file, log_level = kickoff()
+    logger.setLevel(log_level)
+
+    logger.info("Taskmaster started")
 
     try:
-        config = loadConfig(configFile)
-        isValidConfig(config)
+        config = load_config(config_file)
     except Exception as e:
         logger.error(e)
         logger.info("Exiting taskmaster")
         return 1
 
-    master = Master(configFile, logLevel, config)
+    if not is_valid_config(config):
+        logger.info("Exiting taskmaster")
+        return 1
+    
+    init_signals()
 
+    master = Master(config_file, log_level, config)
+    while True:
+        pass
+    return 0
 
 if __name__ == "__main__":
     taskmaster()

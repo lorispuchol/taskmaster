@@ -162,6 +162,6 @@ cython_debug/
 #.idea/
 
 # python venv
-taskmaster-venv
+taskmaster-venv/
 
 log/

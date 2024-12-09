@@ -2,6 +2,13 @@
 
 ### Useful commands
 
+#### run taskmaster
+
+```bash
+python3 taskmaster.py <config.yml> -l LEVEL 
+```
+> LEVEL = DEBUG, INFO, WARNING, ERROR, CRITICAL
+
 #### setup venv
 ```bash
 source setup-venv.sh
