@@ -31,7 +31,9 @@ class Program:
         self.stdout: str = stdout
         self.stderr: str = stderr
 
+
 required_props = ["cmd"]
+
 
 class OneProgram:
     def __init__(self, name: str, props: dict):
@@ -40,6 +42,8 @@ class OneProgram:
 
         if not self.props:
             raise Exception("No properties found for program")
+        if not all(prop in self.props for prop in required_props):
+            raise Exception("Missing required properties for program")
         
         # cmd: str = command  # Required
         # numprocs: int = numprocs

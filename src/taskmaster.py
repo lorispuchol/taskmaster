@@ -23,16 +23,13 @@ class Master:
 master = Master()
 
 
-def exit_taskmaster(sig, frame) -> None:
-    logger.error("Received SIGINT")
-    logger.info("Exiting taskmaster")
+def exit_taskmaster() -> None:
     # TODO : Stop all programs
+    logger.info("Exiting taskmaster")
+    exit(1)
 
-
-def reload_config(sig, frame) -> None:
-    logger.info("Received SIGHUP")
+def reload_config() -> None:
     logger.info("Reloading config")
-
     tmp_conf = load_config(master.configFile)
     if not is_valid_config(tmp_conf):
         logger.info("Exiting taskmaster")
@@ -40,11 +37,18 @@ def reload_config(sig, frame) -> None:
     # TODO : Update programs
     master.config = tmp_conf
 
+def handle_sigint(sig, frame) -> None:
+    logger.warning("Received SIGINT")
+    exit_taskmaster()
+
+def handle_sighup(sig, frame) -> None:
+    logger.info("Received SIGHUP")
+    reload_config()
+
 
 def init_signals() -> None:
-    signal.signal(signal.SIGINT, exit_taskmaster)
-    signal.signal(signal.SIGHUP, reload_config)
-    signal.signal(signal.SIGABRT reload_config)
+    signal.signal(signal.SIGINT, handle_sigint)
+    signal.signal(signal.SIGHUP, handle_sighup)
 
 
 
