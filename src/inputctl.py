@@ -5,7 +5,8 @@ valid_cmds = {
     "stop": "Stop the mentionned program present in the configuration file",
     "restart": "Restart the mentionned program present in the configuration file",
     "status": "Displays the status of all the programs present in the configuration file",
-    "exit": "Exit the main program",
+    "avail": "Displays the list of available programs present in the configuration file",
+    "exit": "Exit the main program (taskmaster)",
     "help": "Display the list of valid commands with their description",
     "reload": "Reload the configuration (be careful to reload when configuration file changed. Otherwise, changes will be ignored)",
 }
@@ -53,4 +54,5 @@ def wait_for_cmds():
 
 
 def perform_cmd(cmd: str):
+    # TODO Perform the command (through the master or program class ?)
     print(f"Performing command: {cmd}")

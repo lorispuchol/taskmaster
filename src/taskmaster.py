@@ -1,7 +1,7 @@
 import yaml
 import argparse
 import signal
-
+import os
 from logger import logger
 
 # TODO: Typed variable
@@ -12,21 +12,23 @@ class Master:
         self,
         pathToConfigFile: str = "",
         loggerLevel: str = "DEBUG",
-        conf: dict = {}
+        conf: dict = {},
     ):
         self.configFile = pathToConfigFile
         self.logLevel = loggerLevel
-        self.config: dict = conf
+        self.fullconfig: dict = conf
         self.programs: list[Program] = []
+        self.mpid: int = os.getpid()
 
 
 master = Master()
 
 
-def exit_taskmaster() -> None:
+def exit_taskmaster(exit_code: int) -> None:
     # TODO : Stop all programs
     logger.info("Exiting taskmaster")
-    exit(1)
+    exit(exit_code)
+
 
 def reload_config() -> None:
     logger.info("Reloading config")
@@ -35,26 +37,35 @@ def reload_config() -> None:
         logger.info("Exiting taskmaster")
         exit(1)
     # TODO : Update programs
-    master.config = tmp_conf
+    master.fullconfig = tmp_conf
+
 
 def handle_sigint(sig, frame) -> None:
-    logger.warning("Received SIGINT")
-    exit_taskmaster()
+    logger.warning("SIGINT Received")
+    exit_taskmaster(130)
+
+
+def handle_sigquit(sig, frame) -> None:
+    logger.warning("SIGQUIT Received")
+    exit_taskmaster(131)
+
 
 def handle_sighup(sig, frame) -> None:
-    logger.info("Received SIGHUP")
+    logger.info("SIGHUP Received")
     reload_config()
 
 
 def init_signals() -> None:
     signal.signal(signal.SIGINT, handle_sigint)
+    signal.signal(signal.SIGQUIT, handle_sigquit)
     signal.signal(signal.SIGHUP, handle_sighup)
-
+    # TODO : Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2)
 
 
 def is_valid_config(conf: dict) -> bool:
     """
     Checks if the given configuration is valid.
+    Valid means: file not empty, file is a dict, file contains 'programs' field, 'programs' field is a dict and not empty
 
     Args:
         conf (dict): The configuration to check.
@@ -66,7 +77,7 @@ def is_valid_config(conf: dict) -> bool:
         bool: True if the configuration is valid, False otherwise.
     """
 
-    conf_required_fields = ["programs"]
+    required_conf_fields = ["programs"]
 
     # Check if the config is valid with 'programs' field
     if not conf:
@@ -75,14 +86,16 @@ def is_valid_config(conf: dict) -> bool:
     if not isinstance(conf, dict):
         logger.error("Config file must start by an object. No list or string allowed")
         return False
-    for field in conf_required_fields:
+    for field in required_conf_fields:
         if field not in conf:
             logger.error(f"Config file is missing required field: '{field}'")
             return False
 
     # Check if the 'programs' field is valid object
     if not isinstance(conf["programs"], dict) or not conf["programs"]:
-        logger.error("Config file: 'programs' field must be an object. No program to manage")
+        logger.error(
+            "Config file: 'programs' field must be an object. No program to manage"
+        )
         return False
 
     # if not conf["programs"]:
@@ -110,7 +123,7 @@ def load_config(configFile: str) -> dict:
     return config
 
 
-# Parse taskmaster's launching command
+# Parse the launching command
 def kickoff() -> tuple[str, str]:
     parser = argparse.ArgumentParser(
         description="Taskmaster is a program that manages other programs."
@@ -139,25 +152,29 @@ def taskmaster() -> int:
     config_file, log_level = kickoff()
     logger.setLevel(log_level)
 
-    logger.info("Taskmaster started")
+    logger.info("Starting taskmaster")
 
     try:
         config = load_config(config_file)
     except Exception as e:
         logger.error(e)
         logger.info("Exiting taskmaster")
-        return 1
+        exit(1)
 
+    # Check only if there is at least one program to manage without checking program's properties
     if not is_valid_config(config):
         logger.info("Exiting taskmaster")
-        return 1
-    
+        exit(1)
+
     init_signals()
 
     master = Master(config_file, log_level, config)
+
+    logger.info(f"Taskmaster is running - pid: {master.mpid}")
     while True:
         pass
     return 0
+
 
 if __name__ == "__main__":
     taskmaster()

@@ -164,4 +164,8 @@ cython_debug/
 # python venv
 taskmaster-venv/
 
+# log files
 log/
+taskmaster.log
+
+test/
