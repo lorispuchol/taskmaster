@@ -1,4 +1,4 @@
 oui:
 programs:
   ok:
-    cmd: "/usr/local/bin/ok"
+    cmd: "/usr/local/bin/ls"

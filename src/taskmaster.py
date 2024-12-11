@@ -3,7 +3,7 @@ import argparse
 import signal
 import os
 from logger import logger
-
+from service import Service
 # TODO: Typed variable
 
 
@@ -17,12 +17,10 @@ class Master:
         self.configFile = pathToConfigFile
         self.logLevel = loggerLevel
         self.fullconfig: dict = conf
-        self.programs: list[Program] = []
-        self.mpid: int = os.getpid()
-
+        self.programs: list[Service] = []
+        self.pid: int = os.getpid()
 
 master = Master()
-
 
 def exit_taskmaster(exit_code: int) -> None:
     # TODO : Stop all programs
@@ -59,7 +57,7 @@ def init_signals() -> None:
     signal.signal(signal.SIGINT, handle_sigint)
     signal.signal(signal.SIGQUIT, handle_sigquit)
     signal.signal(signal.SIGHUP, handle_sighup)
-    # TODO : Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2)
+    # TODO : Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
 
 
 def is_valid_config(conf: dict) -> bool:
