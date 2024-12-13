@@ -1,3 +1,5 @@
+#  File unused at the moment
+
 import readline
 
 valid_cmds = {
@@ -33,6 +35,11 @@ def is_valid_cmd(cmd: str) -> bool:
     return cmd in valid_cmds
 
 
+def perform_cmd(cmd: str):
+    # TODO Perform the command (through the master or program class ?)
+    print(f"Performing command: {cmd}")
+
+
 def wait_for_cmds():
     while True:
         user_input: str = input("taskmaster> (type 'help'): ")
@@ -51,8 +58,3 @@ def wait_for_cmds():
             print_large_help()
         else:
             perform_cmd(user_input)
-
-
-def perform_cmd(cmd: str):
-    # TODO Perform the command (through the master or program class ?)
-    print(f"Performing command: {cmd}")

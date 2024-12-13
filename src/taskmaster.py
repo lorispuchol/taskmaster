@@ -3,8 +3,8 @@ import argparse
 import signal
 import os
 from logger import logger
-from service import Service
-# TODO: Typed variable
+from service import Service, is_valid_service
+from checkConfig import is_valid_config
 
 
 class Master:
@@ -17,38 +17,55 @@ class Master:
         self.configFile = pathToConfigFile
         self.logLevel = loggerLevel
         self.fullconfig: dict = conf
-        self.programs: list[Service] = []
+        self.services: list[Service] = []
         self.pid: int = os.getpid()
+
+    def _init_services(self):
+        """
+        Use to instanciate services classes into master class
+
+        Also used at reload configuration because it check if the service is modified
+        """
+
+        for service in self.fullconfig["programs"]:
+            if is_valid_service(service, self.fullconfig["programs"][service]):
+                self.services.append(Service(service, self.fullconfig["programs"][service]))
+            else:
+                logger.error(f"Service {service} is not valid. Ignoring it")
+
 
 master = Master()
 
+
 def exit_taskmaster(exit_code: int) -> None:
+    """
+    Exit the taskmaster and all its programs.
+    """
     # TODO : Stop all programs
     logger.info("Exiting taskmaster")
     exit(exit_code)
 
 
-def reload_config() -> None:
-    logger.info("Reloading config")
-    tmp_conf = load_config(master.configFile)
-    if not is_valid_config(tmp_conf):
-        logger.info("Exiting taskmaster")
-        exit(1)
-    # TODO : Update programs
-    master.fullconfig = tmp_conf
-
-
 def handle_sigint(sig, frame) -> None:
+    """
+    Handle the SIGINT signal
+    """
     logger.warning("SIGINT Received")
     exit_taskmaster(130)
 
 
 def handle_sigquit(sig, frame) -> None:
+    """
+    Handle the SIGQUIT signal.
+    """
     logger.warning("SIGQUIT Received")
     exit_taskmaster(131)
 
 
 def handle_sighup(sig, frame) -> None:
+    """
+    Handle the SIGHUP signal.
+    """
     logger.info("SIGHUP Received")
     reload_config()
 
@@ -60,49 +77,14 @@ def init_signals() -> None:
     # TODO : Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
 
 
-def is_valid_config(conf: dict) -> bool:
-    """
-    Checks if the given configuration is valid.
-    Valid means: file not empty, file is a dict, file contains 'programs' field, 'programs' field is a dict and not empty
-
-    Args:
-        conf (dict): The configuration to check.
-
-    Raises:
-        Exception: If the configuration is invalid.
-
-    Returns:
-        bool: True if the configuration is valid, False otherwise.
-    """
-
-    required_conf_fields = ["programs"]
-
-    # Check if the config is valid with 'programs' field
-    if not conf:
-        logger.error("Config file is empty")
-        return False
-    if not isinstance(conf, dict):
-        logger.error("Config file must start by an object. No list or string allowed")
-        return False
-    for field in required_conf_fields:
-        if field not in conf:
-            logger.error(f"Config file is missing required field: '{field}'")
-            return False
-
-    # Check if the 'programs' field is valid object
-    if not isinstance(conf["programs"], dict) or not conf["programs"]:
-        logger.error(
-            "Config file: 'programs' field must be an object. No program to manage"
-        )
-        return False
-
-    # if not conf["programs"]:
-    #     raise Exception("Config file: 'programs' field must not be empty")
-    # if not all(isinstance(program, dict) for program in conf["programs"].values()):
-    #     raise Exception("Config file: 'programs' field must contain only objects")
-
-    logger.info("Config updated successfully")
-    return True
+def reload_config() -> None:
+    logger.info("Reloading config")
+    tmp_conf = load_config(master.configFile)
+    if not is_valid_config(tmp_conf):
+        logger.info("Exiting taskmaster")
+        exit(1)
+    # TODO : Update programs
+    master.fullconfig = tmp_conf
 
 
 def load_config(configFile: str) -> dict:
@@ -117,7 +99,6 @@ def load_config(configFile: str) -> dict:
     with open(configFile, "r") as f:
         config: dict = yaml.safe_load(f)
     logger.info("Config file updating...")
-    print(config)
     return config
 
 
@@ -168,10 +149,13 @@ def taskmaster() -> int:
 
     master = Master(config_file, log_level, config)
 
-    logger.info(f"Taskmaster is running - pid: {master.mpid}")
-    while True:
-        pass
-    return 0
+    logger.info(f"Taskmaster is running - pid: {master.pid}")
+
+    master._init_services()
+    # master._run_services()
+    # while True:
+    #     pass
+    # return 0
 
 
 if __name__ == "__main__":

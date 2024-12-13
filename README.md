@@ -1,12 +1,29 @@
 # taskmaster
 
+TODO: Use cerberus for yaml validation schema
+
+Structure ideas: (to modify if needed)
+
+Master -> Service -> Process
+
+Master is the main class.
+Master contain a list of Services.
+
+Service is the program (nginx in the example is a service).
+Serivce contain the configuration.
+Service contain a list of Processes. (because we can have multiple processes for the same service)
+
+Process is the instance of the program. (with the pid to kill)
+
+
+
 ## Service properties documentation
 
 See supervisord http://supervisord.org/configuration.html#program-x-section-settings
 
 ### cmd
 
-The command to run. (path absolute or relative)
+The command to run with arguments. (path absolute or relative)
 
 - Type: str
 - Required
@@ -17,7 +34,7 @@ The number of processes to start. If > 1, the `process_name` will be suffixed wi
 
 - Type: int
 - Default: 1
-- Constraints: >= 1
+- Constraints: 1 <= numprocs <= 32
 
 ### autostart
 
@@ -32,7 +49,7 @@ The total number of seconds which the program needs to stay running after a star
 
 - Type: int
 - Default: 1
-- Constraints: 0 < starttime <= 100000000
+- Constraints: 0 <= starttime
 
 ### startretries
 
@@ -77,12 +94,12 @@ The number of seconds to wait for the OS to return a SIGCHLD to taskmaster after
 
 - Type: int
 - Default: 10
-- Constraints: 0 < stoptime <= 100000000
+- Constraints: 0 < stoptime
 
 ### env
 A list of key/value pairs  that will be placed in the child process' environment.
 
-- Type: {str: str}
+- Type: {str: str} (dict)
 - Default: None (No extra environment)
 
 ### workingdir
@@ -95,7 +112,7 @@ A file path representing a directory to which taskmaster should temporarily chdi
 An octal number (e.g. 002, 022) representing the umask of the process.
 
 - Type: int
-- Default: None (No special umask, inherit supervisor’s) (-1 for subprocess call. Maybe prefix with 0o)
+- Default: None (No special umask, inherit supervisor’s) (-1 for subprocess call. Maybe prefix with `0o` for octal)
 
 ### stdout
 Put process stdout output in the specified file
@@ -162,4 +179,10 @@ kill -9 <pid>
 
 ```bash
 kill -HUP <pid>
+```
+
+### signals
+
+```bash
+kill -l
 ```

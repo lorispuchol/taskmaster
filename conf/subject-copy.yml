@@ -2,3 +2,7 @@ oui:
 programs:
   ok:
     cmd: "/usr/local/bin/ls"
+    bla: bla
+  not_ok:
+    cmd: "ko -la"
+    blouu: blouu
