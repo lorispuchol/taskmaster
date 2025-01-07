@@ -1,6 +1,7 @@
 #  File unused at the moment
 
 import readline
+from taskmaster import master
 
 valid_cmds = {
     "start": "Start the mentionned program present in the configuration file",
@@ -10,7 +11,7 @@ valid_cmds = {
     "avail": "Displays the list of available programs present in the configuration file",
     "exit": "Exit the main program (taskmaster)",
     "help": "Display the list of valid commands with their description",
-    "reload": "Reload the configuration (be careful to reload when configuration file changed. Otherwise, changes will be ignored)",
+    "reload": "Reload the configuration (be careful to reload when configuration file change. Otherwise, changes will be ignored)",
 }
 
 def print_short_help():
@@ -52,8 +53,9 @@ def wait_for_cmds():
         if not is_valid_cmd(user_input):
             print_short_help()
         elif user_input == "exit":
-            print("Closing connection.")
-            break
+            # TODO: Exit taskmaster properly
+            master.exit(1)
+            pass
         elif user_input == "help":
             print_large_help()
         else:

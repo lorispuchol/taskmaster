@@ -22,5 +22,5 @@ logging.basicConfig(
 # Create a shared logger instance
 logger: logging.Logger = logging.getLogger("BIG-LOGGER")
 
-# Set the logger level to DEBUG - Overwrited by the user input <loglevel> options in <starting> function
+# Set the logger level to DEBUG - Overwrited by the user input <logLevel> options in taskmaster function
 logger.setLevel(logging.DEBUG)

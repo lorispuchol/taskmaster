@@ -10,7 +10,7 @@ Master is the main class.
 Master contain a list of Services.
 
 Service is the program (nginx in the example is a service).
-Serivce contain the configuration.
+Service contain the configuration.
 Service contain a list of Processes. (because we can have multiple processes for the same service)
 
 Process is the instance of the program. (with the pid to kill)

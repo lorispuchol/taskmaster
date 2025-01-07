@@ -2,6 +2,7 @@ from enum import Enum
 import signal
 import subprocess
 import cerberus
+from logger import logger
 
 required_program_props = ["cmd"]
 
@@ -59,14 +60,14 @@ class ServiceState(Enum):
     FATAL = "fatal"
     # UNKNOWN = "unknown"  # Not used in taskmaster due to the subject
 
-class AllowedAutoRestartValues(Enum):
+class AutoRestartValues(Enum):
     """Allowed value for 'autorestart' property"""
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
 
 
-class AllowedStopSignalsValues(Enum):
+class StopSignalsValues(Enum):
     """Allowed value for 'stopsignal' property"""
     TERM = "TERM"
     HUP = "HUP"
@@ -75,99 +76,7 @@ class AllowedStopSignalsValues(Enum):
     KILL = "KILL"
     USR1 = "USR1"
     USR2 = "USR2"
-
-
-
-schema = {
-    "servicename": {
-        "type": "dict",
-        "schema": {
-            "cmd": {
-                "type": "string",
-                "required": True,
-                'empty': False,
-            },
-            "numprocs": {
-                "type": "integer",
-                "min": 1,
-                "max": 32,
-                "default": 1,
-            },
-            "autostart": {
-                "type": "boolean",
-                "default": True,
-            },
-            "starttime": {
-                "type": "integer",
-                "min": 0,
-                "default": 1,
-            },
-            "startretries": {
-                "type": "integer",
-                "min": 1,
-                "max": 10,
-                "default": 3,
-            },
-            "autorestart": {
-                "type": "string",
-                "allowed": [v.value for v in AllowedAutoRestartValues],
-                "default": AllowedAutoRestartValues.UNEXPECTED.value,
-            },
-            "exitcodes": {
-                "type": "list",
-                "schema": {
-                    "type": "integer",
-                    "min": 0,
-                    "max": 255,
-                },
-                "default": [0], # success exit code
-            },
-            "stopsignal": {
-                "type": "string",
-                "allowed": [v.value for v in AllowedStopSignalsValues],
-                "default": AllowedStopSignalsValues.TERM.value,
-            },
-            "stoptime": {
-                "type": "integer",
-                "min": 0,
-                "default": 10,
-            },
-            "env": {
-                "type": "dict",
-            },
-            "workingdir": {
-                "type": "string",
-            },
-            "umask": {
-                "type": "integer",
-                "min": 0o0,
-                "max": 0o777,
-            },
-            "stdout": {
-                "type": "string",
-            },
-            "stderr": {
-                "type": "string",
-            },
-            "user": {
-                "type": "string",
-            },
-        },
-    },
-}
-
-
-def is_valid_service(seviceName: str, serviceProps: dict) -> bool:
-    """
-    Check if the given service properties are valid.
-    Valid means: serviceProps is a dict, serviceProps contains all required properties. Properties have the right type and valid values.
-
-    Args:
-        serviceProps (dict): The service properties to check.
-
-    Returns:
-        bool: True if the service properties are valid, False otherwise.
-    """
+    
 
 class Service():
     def __init__(self, name: str, props: dict):

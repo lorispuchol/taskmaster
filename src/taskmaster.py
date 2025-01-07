@@ -1,10 +1,10 @@
-import yaml
+import yaml, json
 import argparse
 import signal
 import os
 from logger import logger
-from service import Service, is_valid_service
-from checkConfig import is_valid_config
+from service import Service
+from config import ConfValidator, isValidConfig
 
 
 class Master:
@@ -27,45 +27,40 @@ class Master:
         Also used at reload configuration because it check if the service is modified
         """
 
-        for service in self.fullconfig["programs"]:
-            if is_valid_service(service, self.fullconfig["programs"][service]):
-                self.services.append(Service(service, self.fullconfig["programs"][service]))
-            else:
-                logger.error(f"Service {service} is not valid. Ignoring it")
+        # for service in self.fullconfig["programs"]:
+        #     ServiceValidator.validate({service: self.fullconfig["programs"][service]})
+        #     if not ServiceValidator.validate(self.fullconfig["programs"][service]):
+        #         logger.error(f"Service {service} properties are invalid: {ServiceValidator.errors}")
+        #         return False
+            # return True
+
+    def exit(exit_code: int) -> None:
+        """
+        Exit the taskmaster and all its programs.
+        """
+        # TODO: Stop all programs
+        logger.info("Exiting taskmaster")
+        exit(exit_code)
 
 
 master = Master()
 
 
-def exit_taskmaster(exit_code: int) -> None:
-    """
-    Exit the taskmaster and all its programs.
-    """
-    # TODO : Stop all programs
-    logger.info("Exiting taskmaster")
-    exit(exit_code)
-
-
 def handle_sigint(sig, frame) -> None:
-    """
-    Handle the SIGINT signal
-    """
+    """Handle the SIGINT signal"""
+    global master
     logger.warning("SIGINT Received")
-    exit_taskmaster(130)
+    master.exit(130)
 
 
 def handle_sigquit(sig, frame) -> None:
-    """
-    Handle the SIGQUIT signal.
-    """
+    """Handle the SIGQUIT signal."""
+    global master
     logger.warning("SIGQUIT Received")
-    exit_taskmaster(131)
-
+    master.exit(131)
 
 def handle_sighup(sig, frame) -> None:
-    """
-    Handle the SIGHUP signal.
-    """
+    """Handle the SIGHUP signal."""
     logger.info("SIGHUP Received")
     reload_config()
 
@@ -74,16 +69,20 @@ def init_signals() -> None:
     signal.signal(signal.SIGINT, handle_sigint)
     signal.signal(signal.SIGQUIT, handle_sigquit)
     signal.signal(signal.SIGHUP, handle_sighup)
-    # TODO : Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
+    # TODO: Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
 
 
 def reload_config() -> None:
-    logger.info("Reloading config")
+    """
+    Reload the configuration file.
+    """
+    logger.info("Reloading config...")
     tmp_conf = load_config(master.configFile)
-    if not is_valid_config(tmp_conf):
+    if not isValidConfig(tmp_conf):
+        # TODO: do not exit but log error and unconsidered the new configuration
         logger.info("Exiting taskmaster")
         exit(1)
-    # TODO : Update programs
+    # TODO: Update programs
     master.fullconfig = tmp_conf
 
 
@@ -98,7 +97,7 @@ def load_config(configFile: str) -> dict:
     """
     with open(configFile, "r") as f:
         config: dict = yaml.safe_load(f)
-    logger.info("Config file updating...")
+    logger.info("Config file loading...")
     return config
 
 
@@ -113,9 +112,9 @@ def kickoff() -> tuple[str, str]:
     parser.add_argument(
         "-l",
         "--logLevel",
-        help="Set the log level. INFO if not specified.",
+        help="Set the log level. DEBUG if not specified.",
         action="store",
-        default="INFO",
+        default="DEBUG",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
@@ -123,7 +122,7 @@ def kickoff() -> tuple[str, str]:
     return args.filename, args.logLevel
 
 
-# log_level=INFO if not specified
+# log_level=DEBUG if not specified
 def taskmaster() -> int:
 
     global master
@@ -140,11 +139,13 @@ def taskmaster() -> int:
         logger.info("Exiting taskmaster")
         exit(1)
 
-    # Check only if there is at least one program to manage without checking program's properties
-    if not is_valid_config(config):
+    if not isValidConfig(config):
         logger.info("Exiting taskmaster")
         exit(1)
 
+    # print(json.dumps(ConfValidator.document["programs"][0], indent=4))
+    # print(json.dumps(ConfValidator.normalized(config)["programs"][0], indent=4))
+    
     init_signals()
 
     master = Master(config_file, log_level, config)
@@ -152,6 +153,7 @@ def taskmaster() -> int:
     logger.info(f"Taskmaster is running - pid: {master.pid}")
 
     master._init_services()
+
     # master._run_services()
     # while True:
     #     pass
