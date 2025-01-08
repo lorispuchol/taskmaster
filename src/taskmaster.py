@@ -5,34 +5,28 @@ import os
 from logger import logger
 from service import Service
 from config import ConfValidator, isValidConfig
-
+# from inputctl import wait_for_inputctl
 
 class Master:
     def __init__(
         self,
-        pathToConfigFile: str = "",
-        loggerLevel: str = "DEBUG",
-        conf: dict = {},
+        pathToConfigFile: str   = "",
+        loggerLevel: str        = "DEBUG",
+        conf: dict              = {},
     ):
-        self.configFile = pathToConfigFile
-        self.logLevel = loggerLevel
-        self.fullconfig: dict = conf
-        self.services: list[Service] = []
-        self.pid: int = os.getpid()
+        self.configFile                 = pathToConfigFile
+        self.fullconfig: dict           = conf
+        self.services: list[Service]    = []
+        self.pid: int                   = os.getpid()
 
-    def _init_services(self):
+    def init_services(self):
         """
         Use to instanciate services classes into master class
 
         Also used at reload configuration because it check if the service is modified
         """
-
-        # for service in self.fullconfig["programs"]:
-        #     ServiceValidator.validate({service: self.fullconfig["programs"][service]})
-        #     if not ServiceValidator.validate(self.fullconfig["programs"][service]):
-        #         logger.error(f"Service {service} properties are invalid: {ServiceValidator.errors}")
-        #         return False
-            # return True
+        for service in self.fullconfig["programs"]:
+            self.services.append(Service(service["name"], service))
 
     def exit(exit_code: int) -> None:
         """
@@ -143,21 +137,18 @@ def taskmaster() -> int:
         logger.info("Exiting taskmaster")
         exit(1)
 
-    # print(json.dumps(ConfValidator.document["programs"][0], indent=4))
-    # print(json.dumps(ConfValidator.normalized(config)["programs"][0], indent=4))
-    
     init_signals()
 
     master = Master(config_file, log_level, config)
-
+    
     logger.info(f"Taskmaster is running - pid: {master.pid}")
-
-    master._init_services()
+    
+    master.init_services()
 
     # master._run_services()
     # while True:
-    #     pass
-    # return 0
+        # wait_for_inputctl()
+    return 0
 
 
 if __name__ == "__main__":

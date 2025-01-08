@@ -41,7 +41,7 @@ def perform_cmd(cmd: str):
     print(f"Performing command: {cmd}")
 
 
-def wait_for_cmds():
+def wait_for_inputctl():
     while True:
         user_input: str = input("taskmaster> (type 'help'): ")
 

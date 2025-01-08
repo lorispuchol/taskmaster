@@ -1,7 +1,7 @@
 from enum import Enum
 import signal
 import subprocess
-import cerberus
+import json
 from logger import logger
 
 required_program_props = ["cmd"]
@@ -83,28 +83,36 @@ class Service():
         self.name: str = name
         self.props: dict = props
         self.processes: list[Process] = []
+        # print(json.dumps(props, indent=4))
+
+        # Props initialized for `subprocess()`
+        self.name = props.get("name")
+        self.cmd = props.get("cmd")
+        self.numprocs = props.get("numprocs", 1)
+        self.autostart = props.get("autostart", True)
+        self.starttime = props.get("starttime", 1)
+        self.startretries = props.get("startretries", 3)
+        self.autorestart = props.get("autorestart", AutoRestartValues.UNEXPECTED.value)
+        self.exitcodes = props.get("exitcodes", [0])
+        self.stopsignal = props.get("stopsignal", StopSignalsValues.TERM.value)
+        self.stoptime = props.get("stoptime", 10)
+        self.env = props.get("env", {})
+        self.workingdir = props.get("workingdir", "/tmp")
+        self.umask = props.get("umask", -1) # Must inherit from the master process by default
+        self.stdout = props.get("stdout", "/dev/null")
+        self.stderr = props.get("stderr", "/dev/null")
+        # for bonus
+        self.user = props.get("user", None) # Must inherit from the master process by default
+        self.start()
+
 
     def updateProps(self, props: dict):
-        self.props = props
         # TODO Update the process with the new properties
+        self.props = props
 
-
-        # Props see http://supervisord.org/configuration.html#program-x-section-settings
-        # cmd: str = command  # Required 
-        # numprocs: int = numprocs
-        # umask: int = umask
-        # workingdir: str = workingdir
-        # autostart: bool = autostart
-        # autorestart: str = autorestart # authorized values LookForRestart enum
-        # exitcodes: list[int] = exitcodes # list of exit code considered as normal exit >= 0 and <= 255 (see https://www.agileconnection.com/article/overview-linux-exit-codes and https://hpc-discourse.usc.edu/t/exit-codes-and-their-meanings/414)
-        # startretries: int = startretries > 0
-        # starttime: int = starttime
-        # stopsignal: str = stopsignal # authorized values: SIGNALS dictionnary
-        # stoptime: int = stoptime
-        # stdout: str = stdout
-        # stderr: str = stderr
-        # env: dict[str, str] = env
-        # user: str = user # user to run as (or uid): Bonus
+    def start(self):
+        result = subprocess.Popen(["cat", "/etc/passwd"], capture_output=False)
+        print("ici")
 
 class Process(subprocess.Popen):
     def __init__(self, pid: int, name: str, state: ServiceState):

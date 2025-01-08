@@ -1,9 +1,14 @@
-import cerberus
+import cerberus, yaml
 from logger import logger
 from enum import Enum
 from service import StopSignalsValues, AutoRestartValues
 
-schemaList = {
+
+# Define the configuration schema
+# TODO Add the missing below properties for unrequired fields to avoid KeyError
+# "nullable": True,
+# "default": None,
+schemaConfig = {
     'programs': {
         'type': 'list',
         'required': True,
@@ -83,6 +88,7 @@ schemaList = {
                 "stderr": {
                     "type": "string",
                 },
+                # for bonus
                 "user": {
                     "type": "string",
                 },
@@ -91,7 +97,9 @@ schemaList = {
     },
 }
 
-ConfValidator = cerberus.Validator(schemaList)
+
+ConfValidator = cerberus.Validator(schemaConfig)
+
 
 def isValidConfig(newConfig: dict) -> bool :
     """Parses a configuration file into a dict.
