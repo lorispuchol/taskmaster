@@ -112,19 +112,19 @@ A file path representing a directory to which taskmaster should temporarily chdi
 An octal number (e.g. 002, 022) representing the umask of the process.
 
 - Type: int
-- Default: None (No special umask, inherit supervisor’s) (-1 for `subprocess()` call. Maybe prefix with `0o` for octal)
+- Default: None (No special umask, inherit supervisor’s) (-1 for `subprocess()` call. Maybe prefix with `0o` or `0` for octal)
 
 ### stdout
 Put process stdout output in the specified file
 
 - Type: str
-- Default: None (Do not redirect stdout) (`/dev/null` for `subprocess()` call)
+- Default: None (Do not redirect stdout) (`/dev/null` for `subprocess()` call) (`subprocess.DEVNULL`)
 
 ### stderr
 Put process stderr output in the specified file
 
 - Type: str
-- Default: None (Do not redirect stdout) (`/dev/null` for `subprocess()` call)
+- Default: None (Do not redirect stdout) (`/dev/null` for `subprocess()` call) (`subprocess.DEVNULL`)
 
 ### user
 Instruct taskmaster to use this UNIX user account as the account which runs the program. The user can only be switched if taskmaster is run as the root user. If taskmaster can’t switch to the specified user, the program will not be started.

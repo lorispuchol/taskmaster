@@ -3,6 +3,7 @@ import signal
 import subprocess
 import json
 from logger import logger
+import os
 
 required_program_props = ["cmd"]
 
@@ -85,7 +86,7 @@ class Service():
         self.processes: list[Process] = []
         # print(json.dumps(props, indent=4))
 
-        # Props initialized for `subprocess()`
+        # All unrequired properties are set to default values if not present in the configuration file
         self.name = props.get("name")
         self.cmd = props.get("cmd")
         self.numprocs = props.get("numprocs", 1)
@@ -111,8 +112,19 @@ class Service():
         self.props = props
 
     def start(self):
-        result = subprocess.Popen(["cat", "/etc/passwd"], capture_output=False)
-        print("ici")
+
+
+        try:
+            with open(self.stdout, "w") as f:
+                print(self.stdout)
+                
+                result = subprocess.Popen(["cat",], stdout=f, stdin=subprocess.DEVNULL)
+                print(result.stdout.read())
+        except Exception as e:
+            logger.error(f"Error while opening {self.stdout}: {e}")
+            
+ 
+
 
 class Process(subprocess.Popen):
     def __init__(self, pid: int, name: str, state: ServiceState):

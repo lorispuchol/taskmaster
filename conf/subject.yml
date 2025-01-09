@@ -1,3 +1,4 @@
 programs:
   - name: "cat"
     cmd: "cat"
+    stdout: "/tmp/cat.stdout"

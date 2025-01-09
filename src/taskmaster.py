@@ -10,14 +10,14 @@ from config import ConfValidator, isValidConfig
 class Master:
     def __init__(
         self,
-        pathToConfigFile: str   = "",
-        loggerLevel: str        = "DEBUG",
-        conf: dict              = {},
+        configPath: str = "",
+        loggerLevel: str = "DEBUG",
+        conf: dict = {},
     ):
-        self.configFile                 = pathToConfigFile
-        self.fullconfig: dict           = conf
-        self.services: list[Service]    = []
-        self.pid: int                   = os.getpid()
+        self.configPath = configPath
+        self.fullconfig: dict = conf
+        self.services: list[Service] = []
+        self.pid: int = os.getpid()
 
     def init_services(self):
         """
@@ -71,7 +71,7 @@ def reload_config() -> None:
     Reload the configuration file.
     """
     logger.info("Reloading config...")
-    tmp_conf = load_config(master.configFile)
+    tmp_conf = load_config(master.configPath)
     if not isValidConfig(tmp_conf):
         # TODO: do not exit but log error and unconsidered the new configuration
         logger.info("Exiting taskmaster")
@@ -80,16 +80,16 @@ def reload_config() -> None:
     master.fullconfig = tmp_conf
 
 
-def load_config(configFile: str) -> dict:
+def load_config(configPath: str) -> dict:
     """Parses a YAML configuration file into a dict.
 
     Args:
-        configFile (str): The path to the YAML configuration file.
+        configPath (str): The path to the YAML configuration file.
 
     Returns:
         dict: The parsed configuration.
     """
-    with open(configFile, "r") as f:
+    with open(configPath, "r") as f:
         config: dict = yaml.safe_load(f)
     logger.info("Config file loading...")
     return config
@@ -140,6 +140,7 @@ def taskmaster() -> int:
     init_signals()
 
     master = Master(config_file, log_level, config)
+
     
     logger.info(f"Taskmaster is running - pid: {master.pid}")
     
