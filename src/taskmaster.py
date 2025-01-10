@@ -1,43 +1,14 @@
 import yaml, json
 import argparse
 import signal
-import os
+import os, sys
 from logger import logger
 from service import Service
 from config import ConfValidator, isValidConfig
 # from inputctl import wait_for_inputctl
-
-class Master:
-    def __init__(
-        self,
-        configPath: str = "",
-        loggerLevel: str = "DEBUG",
-        conf: dict = {},
-    ):
-        self.configPath = configPath
-        self.fullconfig: dict = conf
-        self.services: list[Service] = []
-        self.pid: int = os.getpid()
-
-    def init_services(self):
-        """
-        Use to instanciate services classes into master class
-
-        Also used at reload configuration because it check if the service is modified
-        """
-        for service in self.fullconfig["programs"]:
-            self.services.append(Service(service["name"], service))
-
-    def exit(exit_code: int) -> None:
-        """
-        Exit the taskmaster and all its programs.
-        """
-        # TODO: Stop all programs
-        logger.info("Exiting taskmaster")
-        exit(exit_code)
-
-
-master = Master()
+from typing import List, Optional, Dict, Any
+import readline
+import inspect
 
 
 def handle_sigint(sig, frame) -> None:
@@ -117,9 +88,7 @@ def kickoff() -> tuple[str, str]:
 
 
 # log_level=DEBUG if not specified
-def taskmaster() -> int:
-
-    global master
+def taskmaster() -> None:
 
     config_file, log_level = kickoff()
     logger.setLevel(log_level)
@@ -140,17 +109,10 @@ def taskmaster() -> int:
     init_signals()
 
     master = Master(config_file, log_level, config)
-
-    
     logger.info(f"Taskmaster is running - pid: {master.pid}")
     
     master.init_services()
-
-    # master._run_services()
-    # while True:
-        # wait_for_inputctl()
-    return 0
-
+    wait_for_inputctl()
 
 if __name__ == "__main__":
     taskmaster()

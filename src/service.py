@@ -4,8 +4,8 @@ import subprocess
 import json
 from logger import logger
 import os
+from io import TextIOWrapper
 
-required_program_props = ["cmd"]
 
 SIGNALS = {
     # Signal for x86/ARM https://man7.org/linux/man-pages/man7/signal.7.html
@@ -48,9 +48,9 @@ SIGNALS = {
     # 'UNUSED':   signal.SIGUNUSED,   # equivalent to SIGSYS
 }
 
-class ServiceState(Enum):
+class State(Enum):
     """
-    Process State: see http://supervisord.org/subprocess.html#process-states
+    The different states of a process: see http://supervisord.org/subprocess.html#process-states
     """
     STOPPED = "stopped"
     STARTING = "starting"
@@ -61,14 +61,14 @@ class ServiceState(Enum):
     FATAL = "fatal"
     # UNKNOWN = "unknown"  # Not used in taskmaster due to the subject
 
-class AutoRestartValues(Enum):
+class AutoRestart(Enum):
     """Allowed value for 'autorestart' property"""
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
 
 
-class StopSignalsValues(Enum):
+class StopSignals(Enum):
     """Allowed value for 'stopsignal' property"""
     TERM = "TERM"
     HUP = "HUP"
@@ -93,9 +93,9 @@ class Service():
         self.autostart = props.get("autostart", True)
         self.starttime = props.get("starttime", 1)
         self.startretries = props.get("startretries", 3)
-        self.autorestart = props.get("autorestart", AutoRestartValues.UNEXPECTED.value)
+        self.autorestart = props.get("autorestart", AutoRestart.UNEXPECTED.value)
         self.exitcodes = props.get("exitcodes", [0])
-        self.stopsignal = props.get("stopsignal", StopSignalsValues.TERM.value)
+        self.stopsignal = props.get("stopsignal", StopSignals.TERM.value)
         self.stoptime = props.get("stoptime", 10)
         self.env = props.get("env", {})
         self.workingdir = props.get("workingdir", "/tmp")
@@ -104,7 +104,7 @@ class Service():
         self.stderr = props.get("stderr", "/dev/null")
         # for bonus
         self.user = props.get("user", None) # Must inherit from the master process by default
-        self.start()
+        # self.start()
 
 
     def updateProps(self, props: dict):
@@ -112,25 +112,21 @@ class Service():
         self.props = props
 
     def start(self):
-
-
         try:
             with open(self.stdout, "w") as f:
-                print(self.stdout)
+                # print(self.stdout)
                 
-                result = subprocess.Popen(["cat",], stdout=f, stdin=subprocess.DEVNULL)
-                print(result.stdout.read())
+                result = subprocess.Popen([self.cmd,], stdin=subprocess.DEVNULL)
+                # print(result.stdout.read())
         except Exception as e:
             logger.error(f"Error while opening {self.stdout}: {e}")
             
- 
-
 
 class Process(subprocess.Popen):
-    def __init__(self, pid: int, name: str, state: ServiceState):
+    def __init__(self, pid: int, name: str, state: State):
         self.pid: int = pid
         self.name: str = name ## <servicename_processnumber> (e.g. "myprogam" if one process, "myprogram_1" and myprogram_2 if 2 processes) 
-        self.state: ServiceState = state
+        self.state: State = state
 
     def __str__(self):
         return f"Process {self.name} with PID {self.pid} is {self.state.value}"

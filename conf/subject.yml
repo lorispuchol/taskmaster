@@ -1,4 +1,10 @@
 programs:
-  - name: "cat"
-    cmd: "cat"
+  - name: "uname"
+    cmd: "uname"
+    stdout: "/tmp/cat.stdout"
+  - name: "whoami"
+    cmd: "whoami"
+    stdout: "/tmp/cat.stdout"
+  - name: "date"
+    cmd: "date"
     stdout: "/tmp/cat.stdout"

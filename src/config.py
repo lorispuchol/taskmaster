@@ -1,13 +1,14 @@
 import cerberus, yaml
 from logger import logger
 from enum import Enum
-from service import StopSignalsValues, AutoRestartValues
+from service import StopSignals, AutoRestart
 
 
 # Define the configuration schema
-# TODO Add the missing below properties for unrequired fields to avoid KeyError
-# "nullable": True,
-# "default": None,
+# TODO Add the missing below properties for unrequired fields to avoid KeyError ?
+    # "nullable": True,
+    # "default": None,
+
 schemaConfig = {
     'programs': {
         'type': 'list',
@@ -48,8 +49,8 @@ schemaConfig = {
                 },
                 "autorestart": {
                     "type": "string",
-                    "allowed": [v.value for v in AutoRestartValues],
-                    "default": AutoRestartValues.UNEXPECTED.value,
+                    "allowed": [v.value for v in AutoRestart],
+                    "default": AutoRestart.UNEXPECTED.value,
                 },
                 "exitcodes": {
                     "type": "list",
@@ -62,8 +63,8 @@ schemaConfig = {
                 },
                 "stopsignal": {
                     "type": "string",
-                    "allowed": [v.value for v in StopSignalsValues],
-                    "default": StopSignalsValues.TERM.value,
+                    "allowed": [v.value for v in StopSignals],
+                    "default": StopSignals.TERM.value,
                 },
                 "stoptime": {
                     "type": "integer",
