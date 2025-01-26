@@ -1,6 +1,6 @@
 programs:
   - name: "uname"
-    cmd: "uname"
+    cmd: "/usr/bin/uname"
     stdout: "/tmp/cat.stdout"
   - name: "whoami"
     cmd: "whoami"

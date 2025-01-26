@@ -4,10 +4,10 @@ TODO: Use cerberus for yaml validation schema
 
 Structure ideas: (to modify if needed)
 
-Master -> Service -> Process
+MasterCtl -> Service -> Process
 
-Master is the main class.
-Master contain a list of Services.
+MasterCtl is the main class.
+MasterCtl contain a list of Services.
 
 Service is the program (nginx in the example is a service).
 Service contain the configuration.

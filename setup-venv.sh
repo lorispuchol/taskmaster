@@ -10,4 +10,4 @@ pip3 install -U pip setuptools
 source taskmaster-venv/bin/activate
 
 # Install the required packages
-pip install -r requirements.txt
+pip3 install -r requirements.txt

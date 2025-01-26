@@ -3,39 +3,12 @@ import os
 from service import Service
 from logger import logger
 import readline
+from utils.config import load_config, isValidConfig
+from utils.command_line import is_valid_cmd, print_short_help, print_large_help
+from config import ConfValidator, isValidConfig
 
 
-def perform_cmd(cmd: str):
-    # TODO Perform the command (through the master or program class ?)
-    print(f"Performing command: {cmd}")
-
-
-def wait_for_inputctl():
-    while True:
-        user_input: str = input("taskmaster> (type 'help'): ")
-
-        if not user_input:
-            continue
-
-        readline.add_history(user_input)
-
-        if not is_valid_cmd(user_input):
-            print(user_input)
-            print(user_input.split()[0])
-            print_short_help()
-        elif user_input == "exit":
-            # TODO: Exit taskmaster properly
-            # print(inspect.signature(master.exit))
-            master.exit(0)
-        elif user_input == "help":
-            print_large_help()
-        elif user_input.split()[0] == "start":
-            master.start(user_input.split()[1:])
-        else:
-            perform_cmd(user_input)
-
-
-class Master:
+class MasterCtl:
     def __init__(
         self,
         configPath: str = "",
@@ -65,30 +38,39 @@ class Master:
 
     def start(self, args: Optional[List[str]] = None) -> str:
         
-        # If no arguments are provided, start all services
+        # If no arguments are provided, then it perform action for all services
         if args is None or len(args) == 0:
             for service in self.services:
-                logger.info(f"Starting service: {service.name}")
                 service.start()
             print("All services started")
             return
-        # Create a dictionary for quick lookup of services by name
+        
+        # Create a dictionary for quick lookup of services by name (comprenhension dict). Service name's as key and Service object as value
         service_dict: Dict[str, Service] = {service.name: service for service in self.services}
 
-        started_services = []
+        found_services = []
         not_found_services = []
 
         for arg in args:
             if arg in service_dict.keys():
-                logger.info(f"Starting service: {arg}")
                 service_dict[arg].start()
-                started_services.append(arg)
+                found_services.append(arg)
             else:
                 logger.warning(f"Service not found: {arg}")
                 not_found_services.append(arg)
 
-        # Optionally return a summary (if needed)
+        # Optionally return or print a summary with 'found_services' and 'not_found_services'
         print(f"Services not found: {not_found_services}")
 
-
-master = Master()
+    def reload(self) -> None:
+        """
+        Reload the configuration file.
+        """
+        logger.info("Reloading config...")
+        tmp_conf = load_config(self.configPath)
+        if not isValidConfig(tmp_conf):
+            # TODO: do not exit but log error and unconsidered the new configuration
+            logger.info("Exiting taskmaster")
+            exit(1)
+        # TODO: Update programs
+        self.fullconfig = tmp_conf
