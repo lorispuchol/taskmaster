@@ -1,4 +1,4 @@
-programs:
+services:
   - name: "uname"
     cmd: "/usr/bin/uname"
     stdout: "/tmp/cat.stdout"

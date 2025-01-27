@@ -1,4 +1,4 @@
-programs:
+services:
   nginx:
     cmd: "/usr/local/bin/nginx -c /etc/nginx/test.conf"
     numprocs: 1

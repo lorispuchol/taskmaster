@@ -1,35 +1,32 @@
-import yaml, json
-import argparse
 import signal
-import os, sys
-from logger import logger
-from service import Service
-from config import ConfValidator, isValidConfig
-# from inputctl import wait_for_inputctl
-from typing import List, Optional, Dict, Any
+from utils.logger import logger
 from masterctl import MasterCtl
-from utils.command_line import is_valid_cmd, print_short_help, print_large_help
+from utils.cli import is_valid_cmd, print_short_help, print_large_help, parse_startup_args, valid_cmds
 from utils.config import load_config, isValidConfig
 import readline
+from typing import List
 
 
 def handle_sighup(sig, frame) -> None:
-    """Handle the SIGHUP signal."""
-    logger.info("SIGHUP Received")
+    """Handle the SIGHUP signal.
+    Reload the configuration file"""
+    logger.info(f"SIGHUP Received on taskmaster, pid: {master.pid}")
     master.reload()
 
 def handle_sigint(sig, frame) -> None:
-    """Handle the SIGINT signal"""
-    # global keybord refer to the existing global variable (create it if not exist)
+    """Handle the SIGINT signal.
+    Calls the exit method of masterctl"""
+    # 'global' refers to the existing global variable (create it if not exist)
     global master
-    logger.warning("SIGINT Received")
+    logger.warning(f"SIGINT Received on taskmaster, pid: {master.pid}")
     master.exit(130)
 
 def handle_sigquit(sig, frame) -> None:
-    """Handle the SIGQUIT signal. Then call the exit method of master: MasterCtl instance."""
-    # global keybord refer to the existing global variable (create it if not exist)
+    """Handle the SIGQUIT signal.
+    Calls the exit method of masterctl"""
+    # 'global' refers to the existing global variable (create it if not exist)
     global master
-    logger.warning("SIGQUIT Received")
+    logger.warning(f"SIGQUIT Received on taskmaster, pid: {master.pid}")
     master.exit(131)
 
 def init_signals() -> None:
@@ -39,56 +36,50 @@ def init_signals() -> None:
     # TODO: Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
 
 
-# Parse the launching command
-def kickoff() -> tuple[str, str]:
-    parser = argparse.ArgumentParser(
-        description="Taskmaster is a program that manages other programs."
-    )
-    parser.add_argument(
-        "filename", type=str, help="The path to the configuration file."
-    )
-    parser.add_argument(
-        "-l",
-        "--logLevel",
-        help="Set the log level. DEBUG if not specified.",
-        action="store",
-        default="DEBUG",
-        type=str,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-    )
-    args = parser.parse_args()
-    return args.filename, args.logLevel
 
-def perform_cmd(cmd: str):
-    # TODO Perform the command (through the master or program class ?)
-    print(f"Performing command: {cmd}")
 
-def wait_for_inputctl():
+def select_cmd(cmd: str, args: List[str]) -> None:
+
+    if input == "exit":
+        master.exit(1)
+    elif cmd == "help":
+        print_large_help()
+    if cmd == "start":
+        master.start(args)
+    elif cmd == "stop":
+        master.stop(args)
+    elif cmd == "restart":
+        master.restart(args)
+    elif cmd == "status":
+        master.status(args)
+    elif cmd == "avail":
+        master.avail()
+    elif cmd == "reload":
+        master.reload()
+
+
+def main_loop_ctl():
+
+    init_signals()
+    
     while True:
-        user_input: str = input("taskmaster> (type 'help'): ")
-
+        try:
+            user_input: str = input("taskmaster> (try 'help'): ")
+        except EOFError:
+            master.exit(1)
         if not user_input:
             continue
-
         readline.add_history(user_input)
-
         if not is_valid_cmd(user_input):
             print_short_help()
-        elif user_input == "exit":
-            # TODO: Exit taskmaster properly
-            master.exit(1)
-            pass
-        elif user_input == "help":
-            print_large_help()
-        elif user_input.split()[0] == "start":
-            master.start(user_input.split()[1:])
         else:
-            perform_cmd(user_input)
+            select_cmd(user_input.split()[0], user_input.split()[1:])
+
 
 # log_level=DEBUG if not specified
 def taskmaster() -> None:
 
-    config_file, log_level = kickoff()
+    config_file, log_level = parse_startup_args()
     logger.setLevel(log_level)
 
     logger.info("Starting taskmaster")
@@ -104,14 +95,13 @@ def taskmaster() -> None:
         logger.info("Exiting taskmaster")
         exit(1)
 
-    init_signals()
-
-    global master 
+    # refer to the existing global variable
+    global master
     master = MasterCtl(config_file, config)
     logger.info(f"Taskmaster is running - pid: {master.pid}")
     
     master.init_services()
-    wait_for_inputctl()
+    main_loop_ctl()
 
 
 master: MasterCtl = MasterCtl()

@@ -145,8 +145,9 @@ source setup-venv.sh
 
 ```bash
 python3 taskmaster.py <config.yml> -l LEVEL
-# LEVEL = DEBUG, INFO, WARNING, ERROR, CRITICAL
 ```
+> LEVEL = DEBUG, INFO, WARNING, ERROR, CRITICAL  
+> DEBUG if not specified
 
 ### socket
 

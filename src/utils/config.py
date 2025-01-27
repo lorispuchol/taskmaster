@@ -1,33 +1,15 @@
 import cerberus, yaml
-from logger import logger
-from enum import Enum
+from utils.logger import logger
 from service import StopSignals, AutoRestart
+from typing import Dict
 
-
-class AutoRestart(Enum):
-    """Allowed value for 'autorestart' property"""
-    NEVER = "never"
-    ALWAYS = "always"
-    UNEXPECTED = "unexpected"
-
-
-class StopSignals(Enum):
-    """Allowed value for 'stopsignal' property"""
-    TERM = "TERM"
-    HUP = "HUP"
-    INT = "INT"
-    QUIT = "QUIT"
-    KILL = "KILL"
-    USR1 = "USR1"
-    USR2 = "USR2"
 
 # Define the configuration schema
 # TODO Add the missing below properties for unrequired fields to avoid KeyError ?
     # "nullable": True,
     # "default": None,
-
 schemaConfig = {
-    'programs': {
+    'services': {
         'type': 'list',
         'required': True,
         "schema": {
@@ -119,7 +101,22 @@ schemaConfig = {
 ConfValidator = cerberus.Validator(schemaConfig)
 
 
-def isValidConfig(newConfig: dict) -> bool :
+def load_config(configPath: str) -> Dict:
+    """Parses a YAML configuration file into a dict.
+
+    Args:
+        configPath (str): The path to the YAML configuration file.
+
+    Returns:
+        dict: The parsed configuration.
+    """
+    with open(configPath, "r") as f:
+        config: Dict = yaml.safe_load(f)
+    logger.info("Config file loading...")
+    return config
+
+
+def isValidConfig(newConfig: Dict) -> bool :
     """Parses a configuration file into a dict.
 
     Args:
@@ -134,17 +131,3 @@ def isValidConfig(newConfig: dict) -> bool :
         return True
     logger.error(f"Config file corrupted: {ConfValidator.errors}")
     return False
-
-def load_config(configPath: str) -> dict:
-    """Parses a YAML configuration file into a dict.
-
-    Args:
-        configPath (str): The path to the YAML configuration file.
-
-    Returns:
-        dict: The parsed configuration.
-    """
-    with open(configPath, "r") as f:
-        config: dict = yaml.safe_load(f)
-    logger.info("Config file loading...")
-    return config

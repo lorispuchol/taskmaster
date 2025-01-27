@@ -1,9 +1,7 @@
 from enum import Enum
 import subprocess
-import json
-from logger import logger
-import os
-from io import TextIOWrapper
+from utils.logger import logger
+from typing import List, Dict
 
 
 class State(Enum):
@@ -38,10 +36,10 @@ class StopSignals(Enum):
     
 
 class Service():
-    def __init__(self, name: str, props: dict):
+    def __init__(self, name: str, props: Dict):
         self.name: str = name
-        self.props: dict = props
-        self.processes: list[Process] = []
+        self.props: Dict = props
+        self.processes: List[Process] = []
         # print(json.dumps(props, indent=4))
 
         # All unrequired properties are set to default values if not present in the configuration file
@@ -65,7 +63,7 @@ class Service():
         # self.start()
 
 
-    def updateProps(self, props: dict):
+    def updateProps(self, props: Dict):
         # TODO Update the process with the new properties
         self.props = props
 
@@ -79,6 +77,7 @@ class Service():
                 
                 result = subprocess.Popen([self.cmd,], stdin=subprocess.DEVNULL)
                 # print(result.stdout.read())
+                result.kill()
         except Exception as e:
             logger.error(f"Error while opening {self.stdout}: {e}")
             

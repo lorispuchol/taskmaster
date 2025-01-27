@@ -21,7 +21,7 @@ SIGNALS = {
     'PIPE':     signal.SIGPIPE,
     'ALRM':     signal.SIGALRM,
     'TERM':     signal.SIGTERM,
-    # 'STKFLT':   signal.SIGSTKFLT,   # inexistant on macos
+    # 'STKFLT':   signal.SIGSTKFLT,   # for Linux, not MacOS
     'CHLD':     signal.SIGCHLD,
     'CONT':     signal.SIGCONT,
     'STOP':     signal.SIGSTOP,
@@ -35,11 +35,11 @@ SIGNALS = {
     'PROF':     signal.SIGPROF,
     'WINCH':    signal.SIGWINCH,
     'IO':       signal.SIGIO,       # equivalent to SIGPOLL
-    # 'POLL':     signal.SIGPOLL,     # equivalent to SIGIO     # inexistant on macos
-    # 'PWR':      signal.SIGPWR,                                # inexistant on macos
+    # 'POLL':     signal.SIGPOLL,     # equivalent to SIGIO     # for Linux, not MacOS
+    # 'PWR':      signal.SIGPWR,                                # for Linux, not MacOS
     'SYS':      signal.SIGSYS,      # equivalent to SIGUNUSED
     # 'UNUSED':   signal.SIGUNUSED, # equivalent to SIGSYS
-    'INFO':     signal.SIGINFO,                                 # for macos
-    'WINCH':    signal.SIGWINCH,                                # for macos
-    'EMT':      signal.SIGEMT,                                  # for macos
+    # 'INFO':     signal.SIGINFO,                                 # for MacOS, not Linux
+    # 'WINCH':    signal.SIGWINCH,                                # for MacOS, not Linux
+    # 'EMT':      signal.SIGEMT,                                  # for MacOS, not Linux
 }
