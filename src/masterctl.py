@@ -2,7 +2,7 @@ from typing import List, Optional, Dict
 import os
 from service import Service
 from utils.logger import logger
-from utils.config import load_config, isValidConfig
+from utils.config import load_config, validateConfig
 
 
 class MasterCtl:
@@ -22,6 +22,7 @@ class MasterCtl:
 
         Also used at reload configuration because it check if the service is modified
         """
+
         service: Dict
         for service in self.fullconfig["services"]:
             self.services.append(Service(service["name"], service))
@@ -72,12 +73,14 @@ class MasterCtl:
         """
         logger.info("Reloading config...")
         tmp_conf = load_config(self.configPath)
-        if not isValidConfig(tmp_conf):
+        try:
+            validateConfig(tmp_conf)
+        except Exception as e:
             # TODO: do not exit but log error and unconsidered the new configuration
             logger.info("Exiting taskmaster")
             exit(1)
-        # TODO: Update programs
         self.fullconfig = tmp_conf
+        # TODO: Update programs
 
     def avail(self) -> None:
         """

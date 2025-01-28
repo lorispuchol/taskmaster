@@ -6,9 +6,8 @@ from utils.cli import (
     print_short_help,
     print_large_help,
     startup_parsing,
-    valid_cmds,
 )
-from utils.config import load_config, isValidConfig
+from utils.config import load_config, validateConfig
 import readline
 from typing import List
 
@@ -100,12 +99,10 @@ def taskmaster() -> None:
 
     try:
         config = load_config(config_file)
+        validateConfig(config)
     except Exception as e:
         logger.error(e)
         print(f"ERROR: failed to start taskmaster\n{e}")
-        exit(1)
-    if not isValidConfig(config):
-        logger.info("Exiting taskmaster")
         exit(1)
 
     # refer to the existing global variable

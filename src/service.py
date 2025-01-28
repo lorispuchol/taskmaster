@@ -76,8 +76,9 @@ class Service:
                         self.cmd,
                     ],
                     stdin=subprocess.DEVNULL,
+                    # stdout=f,
                 )
                 # print(result.stdout.read())
                 # result.kill()
         except Exception as e:
-            logger.error(f"Error while opening {self.stdout}: {e}")
+            logger.error(f"{self.stdout}: {e}")

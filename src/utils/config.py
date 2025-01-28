@@ -116,7 +116,7 @@ def load_config(configPath: str) -> Dict:
     return config
 
 
-def isValidConfig(newConfig: Dict) -> bool:
+def validateConfig(newConfig: Dict) -> None:
     """Parses a configuration file into a dict.
 
     Args:
@@ -128,7 +128,6 @@ def isValidConfig(newConfig: Dict) -> bool:
     logger.info("Config file parsing...")
     if ConfValidator.validate(newConfig):
         logger.info("Configuration file parsed successfully")
-        return True
-    logger.error(f"Config file corrupted: {ConfValidator.errors}")
-    print(f"Config file corrupted: {ConfValidator.errors}")
-    return False
+    else:
+        logger.error(f"Config file corrupted: {ConfValidator.errors}")
+        raise ValueError(f"Config file corrupted: {ConfValidator.errors}")

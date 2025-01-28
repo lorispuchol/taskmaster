@@ -1,4 +1,7 @@
 services:
+  - name: "cat"
+    cmd: "cat /etc/passwd"
+    stdout: "/tmp/cat.stdout"
   - name: "uname"
     cmd: "/usr/bin/uname"
     stdout: "/tmp/cat.stdout"
