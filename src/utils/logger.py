@@ -8,15 +8,15 @@ PATH_LOG_FILE: str = pathlib.Path(__file__).parent.parent.parent / "log/taskmast
 if not os.path.exists(PATH_LOG_FILE):
     PATH_LOG_FILE.parent.mkdir(exist_ok=True, parents=True)
 
-# Clear the log file 
+# Clear the log file
 # 'w' for overwrite mode
 open(PATH_LOG_FILE, "w").close()
 
 # 'a' for append mode
 logging.basicConfig(
     filename=PATH_LOG_FILE,
-    filemode='a',
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    filemode="a",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 # Create a shared logger instance

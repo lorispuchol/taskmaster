@@ -1,7 +1,8 @@
 from typing import Tuple
 import argparse
 
-def parse_startup_args() -> Tuple[str, str]:
+
+def startup_parsing() -> Tuple[str, str]:
     """Parses the startup command arguments.
 
     Returns:
@@ -58,4 +59,3 @@ def print_large_help():
 
 def is_valid_cmd(cmd: str) -> bool:
     return cmd.split()[0] in valid_cmds
-

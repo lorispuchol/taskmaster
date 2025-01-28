@@ -6,24 +6,24 @@ from typing import Dict
 
 # Define the configuration schema
 # TODO Add the missing below properties for unrequired fields to avoid KeyError ?
-    # "nullable": True,
-    # "default": None,
+# "nullable": True,
+# "default": None,
 schemaConfig = {
-    'services': {
-        'type': 'list',
-        'required': True,
+    "services": {
+        "type": "list",
+        "required": True,
         "schema": {
             "type": "dict",
             "schema": {
                 "name": {
                     "type": "string",
                     "required": True,
-                    'empty': False,
+                    "empty": False,
                 },
                 "cmd": {
                     "type": "string",
                     "required": True,
-                    'empty': False,
+                    "empty": False,
                 },
                 "numprocs": {
                     "type": "integer",
@@ -58,7 +58,7 @@ schemaConfig = {
                         "min": 0,
                         "max": 255,
                     },
-                    "default": [0], # success exit code
+                    "default": [0],  # success exit code
                 },
                 "stopsignal": {
                     "type": "string",
@@ -116,7 +116,7 @@ def load_config(configPath: str) -> Dict:
     return config
 
 
-def isValidConfig(newConfig: Dict) -> bool :
+def isValidConfig(newConfig: Dict) -> bool:
     """Parses a configuration file into a dict.
 
     Args:
@@ -130,4 +130,5 @@ def isValidConfig(newConfig: Dict) -> bool :
         logger.info("Configuration file parsed successfully")
         return True
     logger.error(f"Config file corrupted: {ConfValidator.errors}")
+    print(f"Config file corrupted: {ConfValidator.errors}")
     return False

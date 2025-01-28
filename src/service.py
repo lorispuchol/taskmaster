@@ -2,23 +2,12 @@ from enum import Enum
 import subprocess
 from utils.logger import logger
 from typing import List, Dict
+from process import Process, State
 
-
-class State(Enum):
-    """
-    The different states of a process: see http://supervisord.org/subprocess.html#process-states
-    """
-    STOPPED = "stopped"
-    STARTING = "starting"
-    RUNNING = "running"
-    BACKOFF = "backoff"
-    STOPPING = "stopping"
-    EXITED = "exited"
-    FATAL = "fatal"
-    # UNKNOWN = "unknown"  # Not used in taskmaster due to the subject
 
 class AutoRestart(Enum):
     """Allowed value for 'autorestart' property"""
+
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
@@ -26,6 +15,7 @@ class AutoRestart(Enum):
 
 class StopSignals(Enum):
     """Allowed value for 'stopsignal' property"""
+
     TERM = "TERM"
     HUP = "HUP"
     INT = "INT"
@@ -33,10 +23,13 @@ class StopSignals(Enum):
     KILL = "KILL"
     USR1 = "USR1"
     USR2 = "USR2"
-    
 
-class Service():
+
+class Service:
     def __init__(self, name: str, props: Dict):
+        """
+        Initialize a service object with its properties and processes.
+        """
         self.name: str = name
         self.props: Dict = props
         self.processes: List[Process] = []
@@ -55,38 +48,36 @@ class Service():
         self.stoptime = props.get("stoptime", 10)
         self.env = props.get("env", {})
         self.workingdir = props.get("workingdir", "/tmp")
-        self.umask = props.get("umask", -1) # Must inherit from the master process by default
+        self.umask = props.get(
+            "umask", -1
+        )  # Must inherit from the master process by default
         self.stdout = props.get("stdout", "/dev/null")
         self.stderr = props.get("stderr", "/dev/null")
-        # for bonus
-        self.user = props.get("user", None) # Must inherit from the master process by default
-        # self.start()
 
+        # for bonus
+        self.user = props.get(
+            "user", None
+        )  # Must inherit from the master process by default
 
     def updateProps(self, props: Dict):
         # TODO Update the process with the new properties
         self.props = props
 
     def start(self):
-        
+
         logger.info(f"Starting service: {self.name}")
 
         try:
             with open(self.stdout, "w") as f:
                 # print(self.stdout)
-                
-                result = subprocess.Popen([self.cmd,], stdin=subprocess.DEVNULL)
+
+                result = subprocess.Popen(
+                    [
+                        self.cmd,
+                    ],
+                    stdin=subprocess.DEVNULL,
+                )
                 # print(result.stdout.read())
-                result.kill()
+                # result.kill()
         except Exception as e:
             logger.error(f"Error while opening {self.stdout}: {e}")
-            
-
-class Process(subprocess.Popen):
-    def __init__(self, pid: int, name: str, state: State):
-        self.pid: int = pid
-        self.name: str = name ## <servicename_processnumber> (e.g. "myprogam" if one process, "myprogram_1" and myprogram_2 if 2 processes) 
-        self.state: State = state
-
-    def __str__(self):
-        return f"Process {self.name} with PID {self.pid} is {self.state.value}"

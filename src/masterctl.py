@@ -22,13 +22,13 @@ class MasterCtl:
 
         Also used at reload configuration because it check if the service is modified
         """
+        service: Dict
         for service in self.fullconfig["services"]:
             self.services.append(Service(service["name"], service))
 
-
-    #############################
-    # MasterCtl methods
-    #############################
+    #################################
+    # taskmaster controller commands
+    #################################
 
     def exit(self, exit_code: int) -> None:
         """
@@ -39,16 +39,18 @@ class MasterCtl:
         exit(exit_code)
 
     def start(self, args: Optional[List[str]] = None) -> str:
-        
+
         # If no arguments are provided, then it perform action for all services
         if args is None or len(args) == 0:
             for service in self.services:
                 service.start()
             print("All services started")
             return
-        
+
         # Create a dictionary for quick lookup of services by name (comprenhension dict). Service name's as key and Service object as value
-        service_dict: Dict[str, Service] = {service.name: service for service in self.services}
+        service_dict: Dict[str, Service] = {
+            service.name: service for service in self.services
+        }
 
         found_services = []
         not_found_services = []
@@ -84,7 +86,7 @@ class MasterCtl:
         print("Available services:")
         for service in self.services:
             print(f"\t{service.name}")
-    
+
     def status(self, args: Optional[List[str]] = None) -> None:
         """
         Display the status of the mentionned service(s). All services if not specified
@@ -102,9 +104,11 @@ class MasterCtl:
                 service.stop()
             print("All services stopped")
             return
-        
+
         # Create a dictionary for quick lookup of services by name (comprenhension dict). Service name's as key and Service object as value
-        service_dict: Dict[str, Service] = {service.name: service for service in self.services}
+        service_dict: Dict[str, Service] = {
+            service.name: service for service in self.services
+        }
 
         found_services = []
         not_found_services = []
@@ -120,7 +124,6 @@ class MasterCtl:
         # Optionally return or print a summary with 'found_services' and 'not_found_services'
         print(f"Services not found: {not_found_services}")
 
-
     def restart(self, args: Optional[List[str]] = None) -> None:
         """
         Restart the mentionned service(s). All services if not specified
@@ -131,9 +134,11 @@ class MasterCtl:
                 service.restart()
             print("All services restarted")
             return
-        
+
         # Create a dictionary for quick lookup of services by name (comprenhension dict). Service name's as key and Service object as value
-        service_dict: Dict[str, Service] = {service.name: service for service in self.services}
+        service_dict: Dict[str, Service] = {
+            service.name: service for service in self.services
+        }
 
         found_services = []
         not_found_services = []
@@ -148,5 +153,3 @@ class MasterCtl:
 
         # Optionally return or print a summary with 'found_services' and 'not_found_services'
         print(f"Services not found: {not_found_services}")
-    
-    
