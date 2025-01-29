@@ -166,6 +166,12 @@ sudo netstat -an | grep <port>
 ### processes
 
 ```bash
+top -p `pgrep -d "," <program-name>`
+```
+
+see this [link](https://phoenixnap.com/kb/top-command-in-linux) for top details
+
+```bash
 ps aux | grep <process>
 ```
 

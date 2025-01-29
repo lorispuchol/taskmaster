@@ -16,7 +16,8 @@ open(PATH_LOG_FILE, "w").close()
 logging.basicConfig(
     filename=PATH_LOG_FILE,
     filemode="a",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%d %b %H:%M:%S"
 )
 
 # Create a shared logger instance

@@ -7,7 +7,6 @@ from process import Process, State
 
 class AutoRestart(Enum):
     """Allowed value for 'autorestart' property"""
-
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
@@ -15,7 +14,6 @@ class AutoRestart(Enum):
 
 class StopSignals(Enum):
     """Allowed value for 'stopsignal' property"""
-
     TERM = "TERM"
     HUP = "HUP"
     INT = "INT"
@@ -36,26 +34,26 @@ class Service:
         # print(json.dumps(props, indent=4))
 
         # All unrequired properties are set to default values if not present in the configuration file
-        self.name = props.get("name")
-        self.cmd = props.get("cmd")
-        self.numprocs = props.get("numprocs", 1)
-        self.autostart = props.get("autostart", True)
-        self.starttime = props.get("starttime", 1)
-        self.startretries = props.get("startretries", 3)
-        self.autorestart = props.get("autorestart", AutoRestart.UNEXPECTED.value)
-        self.exitcodes = props.get("exitcodes", [0])
-        self.stopsignal = props.get("stopsignal", StopSignals.TERM.value)
-        self.stoptime = props.get("stoptime", 10)
-        self.env = props.get("env", {})
-        self.workingdir = props.get("workingdir", "/tmp")
-        self.umask = props.get(
+        self.name: str = props.get("name")
+        self.cmd: str = props.get("cmd")
+        self.numprocs: int = props.get("numprocs", 1)
+        self.autostart: bool = props.get("autostart", True)
+        self.starttime: int = props.get("starttime", 1)
+        self.startretries: int = props.get("startretries", 3)
+        self.autorestart: str = props.get("autorestart", AutoRestart.UNEXPECTED.value)
+        self.exitcodes: List[int] = props.get("exitcodes", [0])
+        self.stopsignal: str = props.get("stopsignal", StopSignals.TERM.value)
+        self.stoptime: int = props.get("stoptime", 10)
+        self.env: Dict = props.get("env", {})
+        self.workingdir: str = props.get("workingdir", "/tmp")
+        self.umask: int = props.get(
             "umask", -1
         )  # Must inherit from the master process by default
-        self.stdout = props.get("stdout", "/dev/null")
-        self.stderr = props.get("stderr", "/dev/null")
+        self.stdout: str = props.get("stdout", "/dev/null")
+        self.stderr: str = props.get("stderr", "/dev/null")
 
         # for bonus
-        self.user = props.get(
+        self.user: str = props.get(
             "user", None
         )  # Must inherit from the master process by default
 
@@ -68,17 +66,17 @@ class Service:
         logger.info(f"Starting service: {self.name}")
 
         try:
-            with open(self.stdout, "w") as f:
-                # print(self.stdout)
-
-                result = subprocess.Popen(
-                    [
-                        self.cmd,
-                    ],
+            with open(self.stdout, "w") as f_out, open(self.stderr, "w") as f_err:
+                proc = subprocess.Popen(
+                    self.cmd.split(),
+                    stdout=f_out,
+                    stderr=f_err, 
                     stdin=subprocess.DEVNULL,
-                    # stdout=f,
+                    text=True,
+                    start_new_session=True, # Create a new process group to avoid zombie processes 
                 )
-                # print(result.stdout.read())
-                # result.kill()
+        except FileNotFoundError as e:
+            logger.error(f"{e}")
         except Exception as e:
-            logger.error(f"{self.stdout}: {e}")
+            logger.error(f"Unexpected error: {e}")
+

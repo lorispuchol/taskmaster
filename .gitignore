@@ -169,3 +169,7 @@ log/
 taskmaster.log
 
 test/
+
+*.log
+*.stdout
+*.stderr
