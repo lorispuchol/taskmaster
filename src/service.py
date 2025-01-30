@@ -63,7 +63,8 @@ class Service:
 
     def start(self):
 
-        logger.info(f"Starting service: {self.name}")
+        print(f"Starting {self.name}")
+        logger.info(f"Starting {self.name}")
 
         try:
             with open(self.stdout, "w") as f_out, open(self.stderr, "w") as f_err:
@@ -80,3 +81,33 @@ class Service:
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
 
+    def reload(self, new_props):
+        """
+        Reload the service. Do nothing if its configuration didn't change.
+        """
+        print("old:", self.props)
+        print(self.props == new_props)
+        print("new:", new_props)
+        print("===================================")
+        if self.props == new_props:
+            logger.info(f"{self.name} configuration didn't change")
+            return
+        else:
+            logger.info(f"Reloading {self.name} configuration")
+            self.updateProps(new_props)
+
+    def stop(self):
+        """
+        Stop the service.
+        """
+        print(f"Stopping {self.name}")
+        # TODO Stop the service
+        pass
+
+    def restart(self):
+        """
+        Restart the service.
+        """
+        print(f"Restarting {self.name}")
+        # TODO Restart the service
+        pass

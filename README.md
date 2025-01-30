@@ -169,7 +169,19 @@ sudo netstat -an | grep <port>
 top -p `pgrep -d "," <program-name>`
 ```
 
+```bash
+top -U <user>
+```
+
 see this [link](https://phoenixnap.com/kb/top-command-in-linux) for top details
+
+```bash
+ps -ef | grep [<process> | <user>]
+```
+
+```bash
+ps -u | grep <user>
+```
 
 ```bash
 ps aux | grep <process>

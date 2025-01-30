@@ -78,6 +78,7 @@ def select_action(cmd: str, args: List[str]) -> None:
 
 
 def main_loop_ctl():
+    logger.info(f"Taskmaster is running - pid: {master.pid}")
     while True:
         try:
             user_input: str = input("taskmaster> (try 'help'): ")
@@ -110,7 +111,6 @@ def taskmaster() -> None:
     master = MasterCtl(config_file, config)
 
     master.init_services()
-    logger.info(f"Taskmaster is running - pid: {master.pid}")
     init_signals()
     main_loop_ctl()
 
