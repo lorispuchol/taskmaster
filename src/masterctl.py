@@ -38,34 +38,35 @@ class MasterCtl:
         for serv in self.services.keys():
             print(f"\t{serv}")
 
-    def status(self, args: Optional[List[str]] = None) -> None:
-        """
-        Display the status of the mentionned service(s). All services if not specified
-        """
-        if args is None or len(args) == 0:
-            for serv in self.services.values():
-                print(f"{serv.name}: {serv.status}")
-            return
-        else:
-            for serv in self.services.values():
-                if serv.name in args:
-                    print(f"{serv.name}: {serv.status}")
-
     def exit(self, exit_code: int) -> None:
         """
         Exit taskmaster and all its programs.
         """
         for serv in self.services.values():
-            serv.stop()
+            print(*serv.stop(), sep="\n")
         logger.info("Exiting taskmaster")
         exit(exit_code)
+
+    def status(self, args: Optional[List[str]] = None) -> None:
+        """
+        Display the status of the mentionned service(s). All services if not specified
+        """
+        if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
+            for serv in self.services.values():
+                print(*serv.status(), sep="\n")
+            return
+        else:
+            for serv in self.services.values():
+                if serv.name in args:
+                    print(*serv.status(), sep="\n")
+
 
     def reload(self) -> None:
         """
         Reload the configuration file.
         """
         logger.info("Reloading...")
-            
+
         try:
             new_conf = load_config(self.configPath)
             validateConfig(new_conf)
@@ -73,7 +74,7 @@ class MasterCtl:
             logger.warning(f"Failed to reload configuration: {e}")
             print(f"Failed to reload configuration\n{e}")
             return
-        
+
         if new_conf == self.fullconfig:
             logger.info("Configuration didn't change")
             print("Configuration didn't change")
@@ -82,13 +83,18 @@ class MasterCtl:
         # New services or known services
         for new_props in new_conf["services"]:
             name = new_props["name"]
+            # Known
             if new_props["name"] in self.services.keys():
-                self.services[name].reload(new_props)
+                if new_props != self.services[name].props:
+                    print(f"{name}: updated process group")
+                    print(*self.services[name].reload(new_props), sep="\n")
+            # New
             else:
+                print(f"{name}: added process group")
                 self.services[name] = Service(name, new_props)
 
         # List of services to remove
-        services_to_remove = [
+        services_to_remove: List[str] = [
             service.name
             for service in self.services.values()
             if service.name
@@ -96,23 +102,22 @@ class MasterCtl:
         ]
         # Stop and remove the service
         for serv in services_to_remove:
-            self.services[serv].stop()
+            print(f"{serv}: removed process group")
+            print(*self.services[serv].stop(), sep="\n")
             self.services.pop(serv)
-
         self.fullconfig = new_conf
 
     def start(self, args: Optional[List[str]] = None) -> str:
         """
         Start mentionned services. All services if not specified
         """
-        if args is None or len(args) == 0:
+        if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                serv.start()
-            print("All services started")
+                print(*serv.start(), sep="\n")
             return
         for arg in args:
             if arg in self.services.keys():
-                self.services[arg].start()
+                print(*self.services[arg].start(), sep="\n")
             else:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")
@@ -121,14 +126,13 @@ class MasterCtl:
         """
         Stop mentionned services. All services if not specified
         """
-        if args is None or len(args) == 0:
+        if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                serv.stop()
-            print("All services stopped")
+                print(*serv.stop(), sep="\n")
             return
         for arg in args:
             if arg in self.services.keys():
-                self.services[arg].stop()
+                print(*self.services[arg].stop(), sep="\n")
             else:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")
@@ -137,14 +141,13 @@ class MasterCtl:
         """
         Restart mentionned services. All services if not specified
         """
-        if args is None or len(args) == 0:
+        if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                serv.restart()
-            print("All services restarted")
+                print(*serv.restart(), sep="\n")
             return
         for arg in args:
             if arg in self.services.keys():
-                self.services[arg].restart()
+                print(*self.services[arg].restart(), sep="\n")
             else:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")

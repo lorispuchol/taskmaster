@@ -31,7 +31,7 @@ class Service:
         self.name: str = name
         self.props: Dict = props
         self.processes: List[Process] = []
-        # print(json.dumps(props, indent=4))
+        self.state: State = State.STOPPED
 
         # All unrequired properties are set to default values if not present in the configuration file
         self.name: str = props.get("name")
@@ -61,10 +61,37 @@ class Service:
         # TODO Update the process with the new properties
         self.props = props
 
-    def start(self):
+    def status(self) -> List[str]:
+        """
+        Return the status of the service.
+        """
+        message: List[str] = []
+        # for process in self.processes:
+        #     message.append(process.status())
+        message.append(f"Process {self.name} is {self.state.value}")
+        
+        return message
+        # for process in self.processes:
+        #     return process.status()
+        # TODO Return the status of the service
 
-        print(f"Starting {self.name}")
+    
+    def reload(self, new_props) -> List[str]:
+        """
+        Reload the service. Do nothing if its configuration didn't change.
+        """
+        if new_props != self.props:
+            self.updateProps(new_props)
+            return self.restart()
+
+    
+    def start(self) -> List[str]:
+
         logger.info(f"Starting {self.name}")
+        message: List[str] = []
+        # for process in self.processes:
+        #     message.append(process.start())
+        message.append(f"Starting {self.name}")
 
         try:
             with open(self.stdout, "w") as f_out, open(self.stderr, "w") as f_err:
@@ -80,34 +107,28 @@ class Service:
             logger.error(f"{e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
+        return message
+    
+    # ping:ping_0: started
+    # ping:ping_0: ERROR (already started)
+        
 
-    def reload(self, new_props):
-        """
-        Reload the service. Do nothing if its configuration didn't change.
-        """
-        print("old:", self.props)
-        print(self.props == new_props)
-        print("new:", new_props)
-        print("===================================")
-        if self.props == new_props:
-            logger.info(f"{self.name} configuration didn't change")
-            return
-        else:
-            logger.info(f"Reloading {self.name} configuration")
-            self.updateProps(new_props)
-
-    def stop(self):
+    def stop(self) -> List[str]:
         """
         Stop the service.
         """
-        print(f"Stopping {self.name}")
+        message: List[str] = []
+        # for process in self.processes:
+        #     message.append(process.stop())
+        message.append(f"Stopping {self.name}")
+        return message
         # TODO Stop the service
-        pass
+        # ping:ping_0: stopped
+        # ping:ping_0: ERROR (not running)
 
-    def restart(self):
+
+    def restart(self) -> List[str]:
         """
         Restart the service.
         """
-        print(f"Restarting {self.name}")
-        # TODO Restart the service
-        pass
+        return self.stop() + self.start()

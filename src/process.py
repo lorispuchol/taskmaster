@@ -7,13 +7,13 @@ class State(Enum):
     The different states of a process: see http://supervisord.org/subprocess.html#process-states
     """
 
-    STOPPED = "stopped"
-    STARTING = "starting"
-    RUNNING = "running"
-    BACKOFF = "backoff"
-    STOPPING = "stopping"
-    EXITED = "exited"
-    FATAL = "fatal"
+    STOPPED = "STOPPED"
+    STARTING = "STARTING"
+    RUNNING = "RUNNING"
+    BACKOFF = "BACKOFF"
+    STOPPING = "STOPPING"
+    EXITED = "EXITED"
+    FATAL = "FATAL"
     # UNKNOWN = "unknown"  # Not used in taskmaster due to the subject
 
 
@@ -26,5 +26,8 @@ class Process(subprocess.Popen):
         )
         self.state: State = state
 
-    def __str__(self):
+    def status(self) -> str:
         return f"Process {self.name} with PID {self.pid} is {self.state.value}"
+    
+    def stop(self) -> str:
+        return f"Stopping {self.name}"

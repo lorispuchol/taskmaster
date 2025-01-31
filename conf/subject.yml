@@ -1,8 +1,8 @@
 services:
-  - name: "cat"
+  - name: "al"
     cmd: "cat /etc/hosts"
   - name: "ls"
     cmd: "ls -la"
   - name: "pind"
-    stdout: "ls.tdout"
+    stdout: "ls.stdout"
     cmd: "ping google.com"

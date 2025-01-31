@@ -19,6 +19,7 @@ schemaConfig = {
                     "type": "string",
                     "required": True,
                     "empty": False,
+                    "regex": "^(?!all$)[A-Za-z0-9_-]+$"
                 },
                 "cmd": {
                     "type": "string",
