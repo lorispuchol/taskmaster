@@ -143,11 +143,16 @@ class MasterCtl:
         """
         if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                print(*serv.restart(), sep="\n")
+                print(*serv.stop(), sep="\n")
+            for serv in self.services.values():
+                print(*serv.start(), sep="\n")
             return
         for arg in args:
             if arg in self.services.keys():
-                print(*self.services[arg].restart(), sep="\n")
+                print(*self.services[arg].stop(), sep="\n")
             else:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")
+        for arg in args:
+            if arg in self.services.keys():
+                print(*self.services[arg].start(), sep="\n")

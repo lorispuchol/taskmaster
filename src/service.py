@@ -93,7 +93,8 @@ class Service:
         if new_props != self.props:
             stop_msg = self.stop()
             self.setProps(new_props)
-            return stop_msg + self.start()
+            if self.autostart == True:
+                return stop_msg + self.start()
 
     def start(self) -> List[str]:
 
@@ -111,7 +112,7 @@ class Service:
                     stderr=f_err,
                     stdin=subprocess.DEVNULL,
                     text=True,
-                    start_new_session=True,  # Create a new process group to avoid zombie processes
+                    # start_new_session=True,  # Create a new process group to avoid zombie processes
                 )
         except FileNotFoundError as e:
             logger.error(f"{e}")
@@ -136,9 +137,3 @@ class Service:
         # TODO Stop the service
         # ping:ping_0: stopped
         # ping:ping_0: ERROR (not running)
-
-    def restart(self) -> List[str]:
-        """
-        Restart the service.
-        """
-        return self.stop() + self.start()

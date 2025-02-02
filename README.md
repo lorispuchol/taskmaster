@@ -77,7 +77,12 @@ The list of integer exit codes that indicate a normal exit. Used in conjunction 
 - Default: [0] (list with one element)
 - Constraints: 0 <= exitcodes[i] <= 255
 
+> Exit code status = 128 + signal number (if killed by a signal)  
+> `echo $?`
+>
 > See:  
+>https://man7.org/linux/man-pages/man7/signal.7.html  
+> https://faculty.cs.niu.edu/~hutchins/csci480/signals.htm  
 > https://www.agileconnection.com/article/overview-linux-exit-codes  
 > https://hpc-discourse.usc.edu/t/exit-codes-and-their-meanings/414
 
