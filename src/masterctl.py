@@ -13,19 +13,23 @@ class MasterCtl:
     ):
         self.configPath = configPath
         self.fullconfig: Dict = conf
-        self.services: Dict[str, Service] = {}  # {"name", Service}
+        self.services: Dict[str, Service] = {}  # {"name": Service}
         self.pid: int = os.getpid()
 
-    def init_services(self):
+    def init_services(self) -> None:
         """
         Use to instanciate services classes into master class
-
-        Also used at reload configuration because it check if the service is modified
+        Accept only the last defined service if the service is defined multiple times
         """
+        # If a service is defined multiple times, only the last one will be used
+        i: int = 1
         for new_serv in self.fullconfig["services"]:
             name = new_serv["name"]
-            self.services[name] = Service(name, new_serv)
-
+            if name not in self.services.keys() and name not in [serv["name"] for serv in self.fullconfig["services"][i:]]:
+                self.services[name] = Service(name, new_serv)
+            i += 1
+        for serv in self.services.values():
+            print(serv.props)
     #################################
     # taskmaster controller commands
     #################################
@@ -64,6 +68,7 @@ class MasterCtl:
     def reload(self) -> None:
         """
         Reload the configuration file.
+        Accept only the last defined service if the service is defined multiple times
         """
         logger.info("Reloading...")
 
@@ -81,17 +86,19 @@ class MasterCtl:
             return
 
         # New services or known services
+        i: int = 1
         for new_props in new_conf["services"]:
             name = new_props["name"]
             # Known
-            if new_props["name"] in self.services.keys():
+            if name in self.services.keys() and name not in [serv["name"] for serv in new_conf["services"][i:]]:
                 if new_props != self.services[name].props:
                     print(f"{name}: updated process group")
                     print(*self.services[name].reload(new_props), sep="\n")
             # New
-            else:
+            elif name not in [serv["name"] for serv in new_conf["services"][i:]]:
                 print(f"{name}: added process group")
                 self.services[name] = Service(name, new_props)
+            i += 1
 
         # List of services to remove
         services_to_remove: List[str] = [
