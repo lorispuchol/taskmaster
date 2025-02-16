@@ -21,15 +21,14 @@ class MasterCtl:
         Use to instanciate services classes into master class
         Accept only the last defined service if the service is defined multiple times
         """
-        # If a service is defined multiple times, only the last one will be used
+        # If a service is defined multiple times, only the last definition will be retained
         i: int = 1
         for new_serv in self.fullconfig["services"]:
             name = new_serv["name"]
             if name not in self.services.keys() and name not in [serv["name"] for serv in self.fullconfig["services"][i:]]:
                 self.services[name] = Service(name, new_serv)
             i += 1
-        for serv in self.services.values():
-            print(serv.props)
+
     #################################
     # taskmaster controller commands
     #################################
@@ -114,7 +113,7 @@ class MasterCtl:
             self.services.pop(serv)
         self.fullconfig = new_conf
 
-    def start(self, args: Optional[List[str]] = None) -> str:
+    def start(self, args: Optional[List[str]] = None) -> None:
         """
         Start mentionned services. All services if not specified
         """
@@ -129,7 +128,7 @@ class MasterCtl:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")
 
-    def stop(self, args: Optional[List[str]] = None) -> str:
+    def stop(self, args: Optional[List[str]] = None) -> None:
         """
         Stop mentionned services. All services if not specified
         """
@@ -144,7 +143,7 @@ class MasterCtl:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")
 
-    def restart(self, args: Optional[List[str]] = None) -> str:
+    def restart(self, args: Optional[List[str]] = None) -> None:
         """
         Restart mentionned services. All services if not specified
         """
