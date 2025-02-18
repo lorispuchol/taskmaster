@@ -1,6 +1,7 @@
 import subprocess
 from enum import Enum
-
+import datetime
+from utils.logger import logger
 
 class State(Enum):
     """
@@ -18,16 +19,68 @@ class State(Enum):
 
 
 # Inerit from subprocess.Popen
-class Process(subprocess.Popen):
-    def __init__(self, pid: int, name: str, state: State = State.STOPPED):
-        self.pid: int = pid
-        self.name: str = (
-            name  ## <servicename_processnumber> (e.g. "myprogam" if one process, "myprogram_1" and myprogram_2 if 2 processes)
-        )
-        self.state: State = state
+class Process():
+    def __init__(self, name: str):
+        self.name: str = name
+        self.state: State = State.STOPPED
+        self.startdate: datetime.datetime | None = None
+        self.stopdate: datetime.datetime | None = None
+        self.exitdate: datetime.datetime | None = None
 
     def status(self) -> str:
-        return f"Process {self.name} with PID {self.pid} is {self.state.value}"
-    
+        # ls                               BACKOFF   Exited too quickly (process log may have details)
+        # ls                               EXITED    Jan 31 05:26 AM
+        # ping:ping_0                      STOPPED   Jan 31 05:51 AM
+        # ping:ping_1                      RUNNING   pid 62330, uptime 0:31:00
+        # ping:ping_2                      RUNNING   pid 62331, uptime 0:31:00
+        # sleep                            RUNNING   pid 71413, uptime 0:00:01
+        #
+        # sleep                            STARTING
+        # ls                               FATAL     Exited too quickly (process log may have details)
+
+        # print(m)
+        # for serv in self.services.values():
+        #     print(Color.BOLD + f"\t{serv.name}:".ljust(m + 1), end=Color.END + "\n")
+        if (self.state == State.STARTING or self.state == State.STOPPING):
+            return f"{self.name}" + (43 - 2 * len(self.name)) * " " + f"{self.state}"
+        elif (self.state == State.RUNNING):
+            return (
+                f"{self.name}"
+                + (43 - 2 * len(self.name)) * " "
+                + f"{self.state}\tpid {self.pid},\t uptime {datetime.datetime.now() - self.startdate}"
+            )
+        elif self.state == State.STOPPED:
+            return f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}\t{self.stopdate}"
+        elif self.state == State.EXITED:
+            return f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}\t{self.exitdate}"
+        elif self.state == State.FATAL or self.state == State.BACKOFF:
+            return f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state} Le message derror"
+
+    def start(self) -> str:
+        try:
+            with open(self.stdout, "w") as f_out, open(self.stderr, "w") as f_err:
+                proc = subprocess.Popen(
+                    self.cmd.split(),
+                    stdout=f_out,
+                    stderr=f_err,
+                    stdin=subprocess.DEVNULL,
+                    text=True,
+                )
+                print(self.name, proc.pid)
+                # while proc.poll() is None:
+                #     pass
+        except FileNotFoundError as e:
+            logger.error(f"{e}")
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+        return "Starting " + self.name
+        # ping:ping_0: started
+        # ping:ping_0: ERROR (already started)
+        # supervisor> start ls
+        # ls: ERROR (spawn error)
+
+
     def stop(self) -> str:
         return f"Stopping {self.name}"
+        # ping:ping_0: stopped
+        # ping:ping_0: ERROR (not running)

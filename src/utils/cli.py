@@ -35,6 +35,8 @@ valid_cmds = {
     "restart": "Restart the mentionned program present in the configuration file",
     "status": "Displays the status of all the services present in the configuration file",
     "avail": "Displays the list of available services present in the configuration file",
+    "availx": "Displays the list of available services with their extended information",
+    "availxl": "Displays the list of available services with their extended information ad default values",
     "exit": "Exit the main program (taskmaster)",
     "help": "Display the list of valid commands with their description",
     "reload": "Reload the configuration (be careful to reload when configuration file change. Otherwise, changes will be ignored)",

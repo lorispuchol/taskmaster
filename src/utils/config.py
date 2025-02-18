@@ -19,7 +19,8 @@ schemaConfig = {
                     "type": "string",
                     "required": True,
                     "empty": False,
-                    "regex": "^(?!all$)[A-Za-z0-9_-]+$"
+                    "regex": "^(?!all$)[A-Za-z0-9_-]+$",
+                    "maxlength": 20,
                 },
                 "cmd": {
                     "type": "string",
@@ -29,7 +30,7 @@ schemaConfig = {
                 "numprocs": {
                     "type": "integer",
                     "min": 1,
-                    "max": 32,
+                    "max": 9, # 32 
                     "default": 1,
                 },
                 "autostart": {

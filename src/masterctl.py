@@ -3,6 +3,7 @@ import os
 from service import Service
 from utils.logger import logger
 from utils.config import load_config, validateConfig
+from utils.colors import Color
 
 
 class MasterCtl:
@@ -18,7 +19,7 @@ class MasterCtl:
 
     def init_services(self) -> None:
         """
-        Use to instanciate services classes into master class
+        Use to instanciate services
         Accept only the last defined service if the service is defined multiple times
         """
         # If a service is defined multiple times, only the last definition will be retained
@@ -37,9 +38,28 @@ class MasterCtl:
         """
         Display available services.
         """
-        print("Available services:")
+        print("Available services:\n")
         for serv in self.services.keys():
-            print(f"\t{serv}")
+            print(Color.BOLD + f"\t{serv}", end=Color.END + "\n")
+        print("\n")
+
+    def availX(self) -> None:
+        """
+        Display available services extend.
+        """
+        print("Available services:\n")
+        for serv in self.services.values():
+            print(Color.BOLD + f"\t{serv.name}:\n" + Color.END, f"\t{serv.props}\n")
+        
+    def availXL(self) -> None:
+        """
+        Display available services extend with default values.
+        """
+
+        print("Available services:\n")
+        for serv in self.services.values():
+            print(Color.BOLD + f"\t{serv.name}:", end=Color.END + "\n")
+            print("".join("\t{}:\t{}\n".format(k, v) for k, v in serv.__dict__.items()))
 
     def exit(self, exit_code: int) -> None:
         """
@@ -112,6 +132,7 @@ class MasterCtl:
             print(*self.services[serv].stop(), sep="\n")
             self.services.pop(serv)
         self.fullconfig = new_conf
+
 
     def start(self, args: Optional[List[str]] = None) -> None:
         """

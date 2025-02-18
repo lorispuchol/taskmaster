@@ -73,6 +73,10 @@ def select_action(cmd: str, args: List[str]) -> None:
         master.status(args)
     if cmd == "avail":
         master.avail()
+    if cmd == "availx":
+        master.availX()
+    if cmd == "availxl":
+        master.availXL()
     if cmd == "reload":
         master.reload()
 

@@ -35,6 +35,7 @@ class Service:
         self.processes: List[Process] = []
         self.state: State = State.STOPPED
         self.setProps(props)
+        self.initProcesses()
 
     def setProps(self, props: Dict):
         """
@@ -48,7 +49,9 @@ class Service:
         self.starttime: int = props.get("starttime", 1)
         self.startretries: int = props.get("startretries", 3)
         self.autorestart: str = props.get("autorestart", AutoRestart.UNEXPECTED.value)
-        self.exitcodes: List[int] = props.get("exitcodes", [0]) # No need restart if changed
+        self.exitcodes: List[int] = props.get(
+            "exitcodes", [0]
+        )  # No need restart if changed
         self.stopsignal: str = props.get("stopsignal", StopSignals.TERM.value)
         self.stoptime: int = props.get("stoptime", 10)
         self.env: Dict = props.get("env", {})
@@ -62,28 +65,25 @@ class Service:
 
         self.props = props
 
+    def initProcesses(self) -> None:
+        """
+        Initialize the processes of the service.
+        """
+        for i in range(self.numprocs):
+            self.processes.append(
+                Process(
+                    name=f"{self.name}_{i+1}" if self.numprocs > 1 else self.name,
+                )
+            )    
+
     def status(self) -> List[str]:
         """
         Return the status of the service.
         """
         message: List[str] = []
-        # for process in self.processes:
-        #     message.append(process.status())
-        message.append(f"Process {self.name} is {self.state.value}")
-
+        for process in self.processes:
+            message.append(process.status())
         return message
-        # for process in self.processes:
-        #     return process.status()
-        # TODO Return the status of the service
-        # ls                               BACKOFF   Exited too quickly (process log may have details)
-        # ls                               EXITED    Jan 31 05:26 AM
-        # ping:ping_0                      STOPPED   Jan 31 05:51 AM
-        # ping:ping_1                      RUNNING   pid 62330, uptime 0:31:00
-        # ping:ping_2                      RUNNING   pid 62331, uptime 0:31:00
-        # sleep                            RUNNING   pid 71413, uptime 0:00:01
-        # 
-        # sleep                            STARTING
-        # ls                               FATAL     Exited too quickly (process log may have details)
 
     def reload(self, new_props) -> List[str]:
         """
@@ -100,40 +100,15 @@ class Service:
 
         logger.info(f"Starting {self.name}")
         message: List[str] = []
-        # for process in self.processes:
-        #     message.append(process.start())
-        message.append(f"Starting {self.name}")
-
-        try:
-            with open(self.stdout, "w") as f_out, open(self.stderr, "w") as f_err:
-                proc = subprocess.Popen(
-                    self.cmd.split(),
-                    stdout=f_out,
-                    stderr=f_err,
-                    stdin=subprocess.DEVNULL,
-                    text=True,
-                    # start_new_session=True,  # Create a new process group to avoid zombie processes
-                )
-        except FileNotFoundError as e:
-            logger.error(f"{e}")
-        except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+        for process in self.processes:
+            message.append(process.start())
         return message
-
-    # ping:ping_0: started
-    # ping:ping_0: ERROR (already started)
-    # supervisor> start ls
-        # ls: ERROR (spawn error)
 
     def stop(self) -> List[str]:
         """
         Stop the service.
         """
         message: List[str] = []
-        # for process in self.processes:
-        #     message.append(process.stop())
-        message.append(f"Stopping {self.name}")
+        for process in self.processes:
+            message.append(process.stop())
         return message
-        # TODO Stop the service
-        # ping:ping_0: stopped
-        # ping:ping_0: ERROR (not running)
