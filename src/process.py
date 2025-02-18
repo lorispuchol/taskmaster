@@ -20,12 +20,16 @@ class State(Enum):
 
 # Inerit from subprocess.Popen
 class Process():
-    def __init__(self, name: str):
+    def __init__(self, name: str, props: dict):
         self.name: str = name
         self.state: State = State.STOPPED
         self.startdate: datetime.datetime | None = None
         self.stopdate: datetime.datetime | None = None
         self.exitdate: datetime.datetime | None = None
+        self.pid: int = 0
+        self.props: dict = props
+        self.proc: subprocess.Popen | None = None
+        self.graceful_stopped: bool = False
 
     def status(self) -> str:
         # ls                               BACKOFF   Exited too quickly (process log may have details)
@@ -58,15 +62,15 @@ class Process():
 
     def start(self) -> str:
         try:
-            with open(self.stdout, "w") as f_out, open(self.stderr, "w") as f_err:
-                proc = subprocess.Popen(
-                    self.cmd.split(),
+            with open(self.props["stdout"], "w") as f_out, open(self.props["stderr"], "w") as f_err:
+                self.proc = subprocess.Popen(
+                    self.props["cmd"].split(),
                     stdout=f_out,
                     stderr=f_err,
                     stdin=subprocess.DEVNULL,
                     text=True,
                 )
-                print(self.name, proc.pid)
+                print(self.name, self.proc.pid)
                 # while proc.poll() is None:
                 #     pass
         except FileNotFoundError as e:
@@ -81,6 +85,17 @@ class Process():
 
 
     def stop(self) -> str:
-        return f"Stopping {self.name}"
+        if self.proc is not None:
+            self.proc.terminate()
+            self.proc.wait()
+            self.stopdate = datetime.datetime.now()
+            self.state = State.STOPPED
+            self.graceful_stopped = True
+            return f"Stopping {self.name}"
+        # return f"Stopping {self.name}"
         # ping:ping_0: stopped
         # ping:ping_0: ERROR (not running)
+
+    @property
+    def getState(self) -> State:
+        return self.state

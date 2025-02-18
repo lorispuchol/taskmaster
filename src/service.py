@@ -33,14 +33,13 @@ class Service:
         self.name: str = name
         self.props: Dict = props
         self.processes: List[Process] = []
-        self.state: State = State.STOPPED
         self.setProps(props)
         self.initProcesses()
 
     def setProps(self, props: Dict):
         """
-        Sets the attributes to those of the configuration
-        Or the default values if not present in the configuration
+        Sets the attributes from the configuration
+        Set default values if ommit in the configuration
         """
         self.name: str = props.get("name")
         self.cmd: str = props.get("cmd")
@@ -59,8 +58,8 @@ class Service:
         self.umask: int = props.get("umask", -1)  # Default: inherit from master
         self.stdout: str = props.get("stdout", "/dev/null")
         self.stderr: str = props.get("stderr", "/dev/null")
-
         # for bonus
+        
         self.user: str = props.get("user", None)  # Default: inherit from master
 
         self.props = props
@@ -73,6 +72,7 @@ class Service:
             self.processes.append(
                 Process(
                     name=f"{self.name}_{i+1}" if self.numprocs > 1 else self.name,
+                    props=self.__dict__
                 )
             )    
 

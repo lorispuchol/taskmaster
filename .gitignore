@@ -168,8 +168,6 @@ taskmaster-venv/
 log/
 taskmaster.log
 
-test/
-
 *.log
 *.stdout
 *.stderr

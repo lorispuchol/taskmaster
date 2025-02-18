@@ -10,6 +10,11 @@ from utils.cli import (
 from utils.config import load_config, validateConfig
 import readline
 from typing import List
+import sys
+import select
+from process import State
+import subprocess
+
 
 #####################
 # Signal handlers
@@ -81,7 +86,51 @@ def select_action(cmd: str, args: List[str]) -> None:
         master.reload()
 
 
-def main_loop_ctl():
+def maintain_processes():
+    # return
+    for service in master.services.values():
+        for process in service.processes:
+            if process.proc is not None and process.proc.poll() is not None:
+                if service.autorestart and process.graceful_stopped == False:
+                    print(f"Process {process.proc.pid} exited. Restarting...")
+                    try:
+                        process.start()
+                    except Exception as e:
+                        print(f"Error restarting process: {e}")
+                        # managed_processes.remove(entry)
+                        continue
+                    # entry["proc"] = new_proc
+                # else:
+                    # managed_processes.remove(entry)
+                    # print(f"Removed exited process {proc.pid}")
+
+def main_loop():
+    """
+    Main loop of the taskmasterctl.
+    It waits for user input and calls the appropriate method.
+    It also iterates over the services and checks their status every second if their is no input
+    """
+
+    timeout: bool = False
+    while True:
+        if timeout == False:
+            sys.stdout.write("taskmaster> (try 'help'): ")  # Display prompt
+            sys.stdout.flush()
+        rlist, _, _ = select.select([sys.stdin], [], [], 1.0)
+        if rlist:
+            timeout = False
+            line = sys.stdin.readline().strip()
+            if not line:
+                continue
+            if not is_valid_cmd(line):
+                print_short_help()
+            else:
+                select_action(line.split()[0], line.split()[1:])
+        else:   
+            timeout = True
+            maintain_processes()
+
+
     logger.info(f"Taskmaster is running - pid: {master.pid}")
     while True:
         try:
@@ -116,7 +165,7 @@ def taskmaster() -> None:
 
     master.init_services()
     init_signals()
-    main_loop_ctl()
+    main_loop()
 
 
 if __name__ == "__main__":
