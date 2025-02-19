@@ -87,12 +87,11 @@ def select_action(cmd: str, args: List[str]) -> None:
 
 
 def maintain_processes():
-    # return
     for service in master.services.values():
         for process in service.processes:
             if process.proc is not None and process.proc.poll() is not None:
                 if service.autorestart and process.graceful_stopped == False:
-                    print(f"Process {process.proc.pid} exited. Restarting...")
+                    logger.warning(f"{process.name}: {process.proc.pid} exited. Restarting...")
                     try:
                         process.start()
                     except Exception as e:
@@ -110,6 +109,8 @@ def main_loop():
     It waits for user input and calls the appropriate method.
     It also iterates over the services and checks their status every second if their is no input
     """
+
+    logger.info(f"Taskmaster is running - pid: {master.pid}")
 
     timeout: bool = False
     while True:
@@ -130,20 +131,19 @@ def main_loop():
             timeout = True
             maintain_processes()
 
-
-    logger.info(f"Taskmaster is running - pid: {master.pid}")
-    while True:
-        try:
-            user_input: str = input("taskmaster> (try 'help'): ")
-        except EOFError:
-            master.exit(1)
-        if not user_input:
-            continue
-        readline.add_history(user_input)
-        if not is_valid_cmd(user_input):
-            print_short_help()
-        else:
-            select_action(user_input.split()[0], user_input.split()[1:])
+    # logger.info(f"Taskmaster is running - pid: {master.pid}")
+    # while True:
+    #     try:
+    #         user_input: str = input("taskmaster> (try 'help'): ")
+    #     except EOFError:
+    #         master.exit(1)
+    #     if not user_input:
+    #         continue
+    #     readline.add_history(user_input)
+    #     if not is_valid_cmd(user_input):
+    #         print_short_help()
+    #     else:
+    #         select_action(user_input.split()[0], user_input.split()[1:])
 
 
 def taskmaster() -> None:

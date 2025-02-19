@@ -41,7 +41,6 @@ class MasterCtl:
         print("Available services:\n")
         for serv in self.services.keys():
             print(Color.BOLD + f"\t{serv}", end=Color.END + "\n")
-        print("\n")
 
     def availX(self) -> None:
         """
