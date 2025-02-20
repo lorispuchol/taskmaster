@@ -52,7 +52,7 @@ def print_short_help():
 
 
 # get the command with the max length to align the description with other commands
-def print_large_help():
+def print_large_help() -> str:
     """Prints the list of valid commands with their description."""
     print("Valid commands:")
     max_cmd_length = max(len(cmd) for cmd in valid_cmds)

@@ -76,40 +76,44 @@ class Service:
                 )
             )    
 
-    def status(self) -> List[str]:
+    def status(self) -> str:
         """
         Return the status of the service.
         """
-        message: List[str] = []
+        messages: List[str] = []
         for process in self.processes:
-            message.append(process.status())
-        return message
+            messages.append(process.status())
+        return os.linesep.join(messages)
 
-    def reload(self, new_props) -> List[str]:
+    def reload(self, new_props) -> str:
         """
         Reload the service. Do nothing if its configuration didn't change.
         """
         # No restart because stop process needs the old properties
+        messages: List[str] = []
         if new_props != self.props:
-            stop_msg = self.stop()
+            messages.append(self.stop())
             self.setProps(new_props)
             if self.autostart == True:
-                return stop_msg + self.start()
+                messages.append(self.start())
+        return os.linesep.join(messages)
 
     def start(self) -> str:
-
+        """
+        Start the service.
+        """
         messages: List[str] = []
 
         logger.info(f"Starting {self.name}")
         for process in self.processes:  
             messages.append(process.start())
-        return "\n".join(messages)
+        return os.linesep.join(messages)
 
-    def stop(self) -> List[str]:
+    def stop(self) -> str:
         """
         Stop the service.
         """
-        message: List[str] = []
+        messages: List[str] = []
         for process in self.processes:
-            message.append(process.stop())
-        return message
+            messages.append(process.stop())
+        return os.linesep.join(messages)

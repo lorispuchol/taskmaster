@@ -23,7 +23,7 @@ def accept_connection(sock):
 def handle_client(conn):
     addr = conn.getpeername()
     try:
-        data = conn.recv(1024)
+        data = conn.recv(4096)
         if data:
             message = data.decode().strip()
             logger.info(f"Received from {addr}: {message}")

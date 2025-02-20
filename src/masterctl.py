@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-import os, sys
+import os
 from service import Service
 from utils.logger import logger
 from utils.config import load_config, validateConfig
@@ -26,7 +26,9 @@ class MasterCtl:
         i: int = 1
         for new_serv in self.fullconfig["services"]:
             name = new_serv["name"]
-            if name not in self.services.keys() and name not in [serv["name"] for serv in self.fullconfig["services"][i:]]:
+            if name not in self.services.keys() and name not in [
+                serv["name"] for serv in self.fullconfig["services"][i:]
+            ]:
                 self.services[name] = Service(name, new_serv)
             i += 1
 
@@ -34,85 +36,99 @@ class MasterCtl:
     # taskmaster controller commands
     #################################
 
-    def avail(self) -> None:
+    def avail(self) -> str:
         """
         Display available services.
         """
-        print("Available services:\n")
+        messages: List[str] = []
+        messages.append("Available services:")
         for serv in self.services.keys():
-            print(Color.BOLD + f"\t{serv}", end=Color.END + "\n")
+            messages.append(Color.BOLD + f"\t{serv}" + Color.END)
+        return os.linesep.join(messages)
 
-    def availX(self) -> None:
+    def availX(self) -> str:
         """
         Display available services extend.
         """
-        print("Available services:\n")
+        messages: List[str] = []
+        messages.append(f"Available services:")
         for serv in self.services.values():
-            print(Color.BOLD + f"\t{serv.name}:\n" + Color.END, f"\t{serv.props}\n")
-        
-    def availXL(self) -> None:
+            messages.append(Color.BOLD + f"\t{serv.name}:{os.linesep}" + Color.END + f"\t{serv.props}" + os.linesep)
+        return os.linesep.join(messages)
+
+    def availXL(self) -> str:
         """
         Display available services extend with default values.
         """
-
-        print("Available services:\n")
+        messages: List[str] = []
+        messages.append(f"Available services:")
         for serv in self.services.values():
-            print(Color.BOLD + f"\t{serv.name}:", end=Color.END + "\n")
-            print("".join("\t{}:\t{}\n".format(k, v) for k, v in serv.__dict__.items()))
+            messages.append(Color.BOLD + f"\t{serv.name}:" + Color.END)
+            messages.append("".join(f"\t{k}:\t{v}{os.linesep}" for k, v in vars(serv).items()))
+        return os.linesep.join(messages)
 
-    def terminate(self) -> None:
+    def terminate(self) -> str:
         """
         Exit taskmaster and all its programs.
         """
+        messages: List[str] = []
         for serv in self.services.values():
-            print(*serv.stop(), sep="\n")
+            messages.append(serv.stop())
+        return os.linesep.join(messages)
 
-    def status(self, args: Optional[List[str]] = None) -> None:
+    def status(self, args: Optional[List[str]] = None) -> str:
         """
         Display the status of the mentionned service(s). All services if not specified
         """
+        messages: List[str] = []
         if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                print(*serv.status(), sep="\n")
-            return
-        else:
-            for serv in self.services.values():
-                if serv.name in args:
-                    print(*serv.status(), sep="\n")
+                messages.append(serv.status())
+            return os.linesep.join(messages)
+        for serv in self.services.values():
+            if serv.name in args:
+                messages.append(serv.status())
+        return os.linesep.join(messages)
 
-
-    def reload(self) -> None:
+    def reload(self) -> str:
         """
         Reload the configuration file.
         Accept only the last defined service if the service is defined multiple times
         """
         logger.info("Reloading...")
-
+        messages: List[str] = []
         try:
             new_conf = load_config(self.configPath)
             validateConfig(new_conf)
         except Exception as e:
             logger.warning(f"Failed to reload configuration: {e}")
-            print(f"Failed to reload configuration\n{e}")
-            return
+            messages.append(f"Failed to reload configuration: {e}")
+            return os.linesep.join(messages)
 
         if new_conf == self.fullconfig:
             logger.info("Configuration didn't change")
-            print("Configuration didn't change")
-            return
+            messages.append("Configuration didn't change")
+            return os.linesep.join(messages)
 
         # New services or known services
         i: int = 1
         for new_props in new_conf["services"]:
             name = new_props["name"]
             # Known
-            if name in self.services.keys() and name not in [serv["name"] for serv in new_conf["services"][i:]]:
+            if name in self.services.keys() and name not in [
+                serv["name"] for serv in new_conf["services"][i:]
+            ]:
                 if new_props != self.services[name].props:
-                    print(f"{name}: updated process group")
-                    print(*self.services[name].reload(new_props), sep="\n")
+                    messages.append(f"{name}: updated process group")
+                    messages.append(self.services[name].reload(new_props))
+                    # print(f"{name}: updated process group")
+                    # print(*self.services[name].reload(new_props), sep="\n")
+                else:
+                    messages.append(f"{name}: unchanged process group")
             # New
             elif name not in [serv["name"] for serv in new_conf["services"][i:]]:
-                print(f"{name}: added process group")
+                # print(f"{name}: added process group")
+                messages.append(f"{name}: added process group")
                 self.services[name] = Service(name, new_props)
             i += 1
 
@@ -125,60 +141,65 @@ class MasterCtl:
         ]
         # Stop and remove the service
         for serv in services_to_remove:
-            print(f"{serv}: removed process group")
-            print(*self.services[serv].stop(), sep="\n")
+            messages.append(f"{serv}: removed process group, stopping group's processes")
+            messages.append(self.services[serv].stop())
             self.services.pop(serv)
         self.fullconfig = new_conf
+        return os.linesep.join(messages)
 
 
     def start(self, args: Optional[List[str]] = None) -> str:
         """
         Start mentionned services. All services if not specified
         """
-
         messages: List[str] = []
         if args is None or len(args) == 0 or (len(args) == 1 and args[0] == "all"):
             for serv in self.services.values():
                 messages.append(serv.start())
+            return os.linesep.join(messages)
         for arg in args:
             if arg in self.services.keys():
-                print(*self.services[arg].start(), sep="\n")
+                messages.append(self.services[arg].start())
             else:
                 logger.warning(f"Service not found: {arg}")
-                print(f"Service not found: {arg}")
-        return "\n".join(messages)
-    
+                messages.append(f"Service not found: {arg}")
+        return os.linesep.join(messages)
+
     def stop(self, args: Optional[List[str]] = None) -> None:
         """
         Stop mentionned services. All services if not specified
         """
+        messages: List[str] = []
         if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                print(*serv.stop(), sep="\n")
-            return
+                messages.append(serv.stop())
+            return os.linesep.join(messages)
         for arg in args:
             if arg in self.services.keys():
-                print(*self.services[arg].stop(), sep="\n")
+                messages.append(self.services[arg].stop())
             else:
                 logger.warning(f"Service not found: {arg}")
-                print(f"Service not found: {arg}")
+        return os.linesep.join(messages)
+        
 
     def restart(self, args: Optional[List[str]] = None) -> None:
         """
         Restart mentionned services. All services if not specified
         """
+        messages: List[str] = []
         if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                print(*serv.stop(), sep="\n")
+                messages.append(serv.stop())
             for serv in self.services.values():
-                print(*serv.start(), sep="\n")
-            return
+                messages.append(serv.start())
+            return os.linesep.join(messages)
         for arg in args:
             if arg in self.services.keys():
-                print(*self.services[arg].stop(), sep="\n")
+                messages.append(self.services[arg].stop())
             else:
                 logger.warning(f"Service not found: {arg}")
-                print(f"Service not found: {arg}")
+                messages.append(f"Service not found: {arg}")
         for arg in args:
             if arg in self.services.keys():
-                print(*self.services[arg].start(), sep="\n")
+                messages.append(self.services[arg].start())
+        return os.linesep.join(messages)

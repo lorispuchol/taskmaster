@@ -76,7 +76,7 @@ class Process():
             logger.error(f"{e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-        return "Starting " + self.name
+        return f"Starting {self.name}"
         # ping:ping_0: started
         # ping:ping_0: ERROR (already started)
         # supervisor> start ls
@@ -94,6 +94,7 @@ class Process():
         # return f"Stopping {self.name}"
         # ping:ping_0: stopped
         # ping:ping_0: ERROR (not running)
+        return f"{self.name}: ERROR (not running)"
 
     @property
     def getState(self) -> State:
