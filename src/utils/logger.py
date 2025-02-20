@@ -1,6 +1,16 @@
 import logging
 import os
 import pathlib
+import sys
+
+# Create a shared logger instance
+logger: logging.Logger = logging.getLogger("BIG-LOGGER")
+
+# Set to DEBUG by default
+# Overwrited by the user input <logLevel> in taskmaster()
+logger.setLevel(logging.DEBUG)
+
+logger.propagate = False  # Prevent propagation to the root logger
 
 
 # Create log directory alongside src directory
@@ -10,19 +20,25 @@ if not os.path.exists(PATH_LOG_FILE):
 
 # Clear the log file
 # 'w' for overwrite mode
-open(PATH_LOG_FILE, "w").close()
 
-# 'a' for append mode
-logging.basicConfig(
-    filename=PATH_LOG_FILE,
-    filemode="a",
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%d %b %H:%M:%S"
-)
+try:
+    open(PATH_LOG_FILE, "w").close()
+except Exception as e:
+    print(f"Failed to access log file <log/taskmaster.log>: {e}")
+    sys.exit(1)
 
-# Create a shared logger instance
-logger: logging.Logger = logging.getLogger("BIG-LOGGER")
+if not logger.handlers:
+    # Create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s", datefmt="%d %b %H:%M:%S"
+    )
 
-# Set to DEBUG by default
-# Overwrited by the user input <logLevel> in taskmaster()
-logger.setLevel(logging.DEBUG)
+    # Create file handler
+    file_handler = logging.FileHandler(PATH_LOG_FILE)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Create stdout handler
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setFormatter(formatter)
+    logger.addHandler(stdout_handler)
