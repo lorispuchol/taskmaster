@@ -81,10 +81,13 @@ The list of integer exit codes that indicate a normal exit. Used in conjunction 
 > `echo $?`
 >
 > See:  
->https://man7.org/linux/man-pages/man7/signal.7.html  
+> https://man7.org/linux/man-pages/man7/signal.7.html  
 > https://faculty.cs.niu.edu/~hutchins/csci480/signals.htm  
 > https://www.agileconnection.com/article/overview-linux-exit-codes  
 > https://hpc-discourse.usc.edu/t/exit-codes-and-their-meanings/414
+> https://www.computerhope.com/unix/signals.htm
+> https://stackoverflow.com/questions/1101957/are-there-any-standard-exit-status-codes-in-linux/1535733#1535733
+> https://tldp.org/LDP/abs/html/exitcodes.html
 
 
 ### stopsignal
@@ -152,7 +155,7 @@ source setup-venv.sh
 python3 taskmaster.py <config.yml> -l LEVEL
 ```
 > LEVEL = DEBUG, INFO, WARNING, ERROR, CRITICAL  
-> DEBUG if not specified
+> INFO by default if not specified
 
 ### socket
 

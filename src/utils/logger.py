@@ -6,9 +6,9 @@ import sys
 # Create a shared logger instance
 logger: logging.Logger = logging.getLogger("BIG-LOGGER")
 
-# Set to DEBUG by default
+# Set to INFO by default
 # Overwrited by the user input <logLevel> in taskmaster()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 logger.propagate = False  # Prevent propagation to the root logger
 

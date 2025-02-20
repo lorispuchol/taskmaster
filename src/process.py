@@ -1,8 +1,7 @@
 import subprocess
 from enum import Enum
-import datetime
+import datetime, os
 from utils.logger import logger
-
 class State(Enum):
     """
     The different states of a process: see http://supervisord.org/subprocess.html#process-states
@@ -70,7 +69,7 @@ class Process():
                     stdin=subprocess.DEVNULL,
                     text=True,
                 )
-                print(self.name, self.proc.pid)
+                # print(self.name, self.proc.pid)
                 # while proc.poll() is None:
                 #     pass
         except FileNotFoundError as e:

@@ -1,5 +1,5 @@
 from enum import Enum
-import subprocess
+import subprocess, os
 from utils.logger import logger
 from typing import List, Dict
 from process import Process, State
@@ -96,13 +96,14 @@ class Service:
             if self.autostart == True:
                 return stop_msg + self.start()
 
-    def start(self) -> List[str]:
+    def start(self) -> str:
+
+        messages: List[str] = []
 
         logger.info(f"Starting {self.name}")
-        message: List[str] = []
-        for process in self.processes:
-            message.append(process.start())
-        return message
+        for process in self.processes:  
+            messages.append(process.start())
+        return "\n".join(messages)
 
     def stop(self) -> List[str]:
         """

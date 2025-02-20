@@ -1,13 +1,12 @@
 import socket
 import readline
-from utils.logger import logger
 
 def run_client(host='127.0.0.1', port=65432):
     sock = None
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
-        logger.info("Connected to server")
+        print("Connected to server")
 
         while True:
             message = input("Enter message (type 'exit' to quit): ")
@@ -21,26 +20,26 @@ def run_client(host='127.0.0.1', port=65432):
                 sock.sendall(message.encode())
                 data = sock.recv(1024)
                 if not data:
-                    logger.info("Server closed the connection")
+                    print("Server closed the connection, you are disconnected")
                     break
                 print(f"Received from server: {data.decode()}")
             except (ConnectionResetError, BrokenPipeError):
-                logger.error("Connection lost with server")
+                print("Connection lost with server")
                 break
             except Exception as e:
-                logger.error(f"Communication error: {e}")
+                print(f"Communication error: {e}")
                 break
 
     except ConnectionRefusedError:
-        logger.error("Server is not running")
+        print("Server is not running")
     except KeyboardInterrupt:
-        logger.info("Client shutdown by user")
+        print("Client shutdown by user")
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
     finally:
         if sock:
             sock.close()
-        logger.info("Disconnected from server")
+        print("Interactive controller exited")
 
 if __name__ == "__main__":
     run_client()

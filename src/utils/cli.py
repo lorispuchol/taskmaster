@@ -7,7 +7,7 @@ def startup_parsing() -> Tuple[str, str]:
 
     Returns:
         Tuple[str, str]: The configuration file path and the log level.
-        log level is set to "DEBUG" if not specified.
+        log level is set to "INFO" if not specified.
     """
 
     parser = argparse.ArgumentParser(
@@ -19,9 +19,9 @@ def startup_parsing() -> Tuple[str, str]:
     parser.add_argument(
         "-l",
         "--logLevel",
-        help="Set the log level. DEBUG if not specified.",
+        help="Set the log level. INFO if not specified.",
         action="store",
-        default="DEBUG",
+        default="INFO",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
@@ -37,9 +37,10 @@ valid_cmds = {
     "avail": "Displays the list of available services present in the configuration file",
     "availx": "Displays the list of available services with their extended information",
     "availxl": "Displays the list of available services with their extended information ad default values",
-    "exit": "Exit the main program (taskmaster)",
     "help": "Display the list of valid commands with their description",
     "reload": "Reload the configuration (be careful to reload when configuration file change. Otherwise, changes will be ignored)",
+    "exit": "Exit interactive controller",
+    "shutdown": "Shutdown the server exiting gracefully all managed processes",
 }
 
 
@@ -56,7 +57,7 @@ def print_large_help():
     print("Valid commands:")
     max_cmd_length = max(len(cmd) for cmd in valid_cmds)
     for cmd, desc in valid_cmds.items():
-        print(f"\t{cmd.ljust(max_cmd_length)}:\t {desc}")
+        return (f"\t{cmd.ljust(max_cmd_length)}:\t {desc}")
 
 
 def is_valid_cmd(cmd: str) -> bool:

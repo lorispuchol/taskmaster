@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-import os
+import os, sys
 from service import Service
 from utils.logger import logger
 from utils.config import load_config, validateConfig
@@ -60,14 +60,12 @@ class MasterCtl:
             print(Color.BOLD + f"\t{serv.name}:", end=Color.END + "\n")
             print("".join("\t{}:\t{}\n".format(k, v) for k, v in serv.__dict__.items()))
 
-    def exit(self, exit_code: int) -> None:
+    def terminate(self) -> None:
         """
         Exit taskmaster and all its programs.
         """
         for serv in self.services.values():
             print(*serv.stop(), sep="\n")
-        logger.info("Exiting taskmaster")
-        exit(exit_code)
 
     def status(self, args: Optional[List[str]] = None) -> None:
         """
@@ -133,21 +131,23 @@ class MasterCtl:
         self.fullconfig = new_conf
 
 
-    def start(self, args: Optional[List[str]] = None) -> None:
+    def start(self, args: Optional[List[str]] = None) -> str:
         """
         Start mentionned services. All services if not specified
         """
-        if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
+
+        messages: List[str] = []
+        if args is None or len(args) == 0 or (len(args) == 1 and args[0] == "all"):
             for serv in self.services.values():
-                print(*serv.start(), sep="\n")
-            return
+                messages.append(serv.start())
         for arg in args:
             if arg in self.services.keys():
                 print(*self.services[arg].start(), sep="\n")
             else:
                 logger.warning(f"Service not found: {arg}")
                 print(f"Service not found: {arg}")
-
+        return "\n".join(messages)
+    
     def stop(self, args: Optional[List[str]] = None) -> None:
         """
         Stop mentionned services. All services if not specified
