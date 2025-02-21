@@ -15,7 +15,7 @@ valid_cmds = {
 
 def print_short_help():
     """Prints the list of valid commands."""
-    print("Valid commands: ouiiii")
+    print("Valid commands:")
     for cmd in valid_cmds:
         print(f"\t{cmd}")
 

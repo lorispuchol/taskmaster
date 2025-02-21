@@ -71,6 +71,7 @@ class Process():
                 # print(self.name, self.proc.pid)
                 # while proc.poll() is None:
                 #     pass
+            self.graceful_stop = False
         except FileNotFoundError as e:
             logger.error(f"{e}")
         except Exception as e:
