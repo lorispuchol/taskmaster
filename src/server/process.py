@@ -1,7 +1,6 @@
-import subprocess
+import datetime, subprocess
 from enum import Enum
-import datetime, os
-from utils.logger import logger
+from logger import logger
 class State(Enum):
     """
     The different states of a process: see http://supervisord.org/subprocess.html#process-states

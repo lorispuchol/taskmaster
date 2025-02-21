@@ -1,15 +1,8 @@
-import socket, selectors, signal, sys
-from utils.logger import logger
+import socket, selectors, signal, sys, argparse
+from logger import logger
 from masterctl import MasterCtl
-from utils.cli import (
-    is_valid_cmd,
-    print_short_help,
-    print_large_help,
-    startup_parsing,
-)
-from utils.config import load_config, validateConfig
-from typing import List
-
+from config import load_config, validateConfig
+from typing import List, Tuple
 
 ####################
 # Global variables #
@@ -87,8 +80,6 @@ def select_action(cmd: str, args: List[str]) -> str:
         sel.close()
         master.terminate()
         sys.exit(0)
-    if cmd == "help":
-        return print_large_help()
     if cmd == "start":
         return master.start(args)
     if cmd == "stop":
@@ -105,7 +96,8 @@ def select_action(cmd: str, args: List[str]) -> str:
         return master.availXL()
     if cmd == "reload":
         return master.reload()
-    return "Command executed"
+    return f"Unknown command: {cmd}"
+    
 
 
 def accept_connection(sock):
@@ -173,8 +165,34 @@ def run_server(host="0.0.0.0", port=65432):
 # start point and parsing #
 ###########################
 
+def startup_parsing() -> Tuple[str, str]:
+    """Parses the startup command arguments.
 
-def taskmaster() -> None:
+    Returns:
+        Tuple[str, str]: The configuration file path and the log level.
+        log level is set to "INFO" if not specified.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Taskmaster is a program that manages other programs."
+    )
+    parser.add_argument(
+        "filename", type=str, help="The path to the configuration file."
+    )
+    parser.add_argument(
+        "-l",
+        "--logLevel",
+        help="Set the log level. INFO if not specified.",
+        action="store",
+        default="INFO",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    )
+    args = parser.parse_args()
+    return args.filename, args.logLevel
+
+
+def taskmasterd() -> None:
 
     config_file, log_level = startup_parsing()  # log_level = "INFO" if not specified
     logger.setLevel(log_level)
@@ -198,4 +216,4 @@ def taskmaster() -> None:
 
 
 if __name__ == "__main__":
-    taskmaster()
+    taskmasterd()

@@ -1,6 +1,6 @@
 services:
+  - name: "lss"
+    cmd: "ls -l"
   - name: "ping"
     stdout: "ls.stdout"
     cmd: "ping google.com"
-  - name: "ls"
-    cmd: "ls -l"

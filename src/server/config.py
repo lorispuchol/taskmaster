@@ -1,5 +1,5 @@
 import cerberus, yaml
-from utils.logger import logger
+from logger import logger
 from service import StopSignals, AutoRestart
 from typing import Dict
 

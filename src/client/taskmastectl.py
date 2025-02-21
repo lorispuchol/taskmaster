@@ -1,5 +1,5 @@
-import socket
-import readline
+import socket, readline
+from cmd import is_valid_cmd, print_short_help, print_large_help
 
 def run_client(host='127.0.0.1', port=65432):
     sock = None
@@ -11,8 +11,14 @@ def run_client(host='127.0.0.1', port=65432):
             if not message:
                 continue
             message = message[:4096]
+            if is_valid_cmd(message) is False:
+                print_short_help()
+                continue
+            if (message.split()[0] == "help"):
+                print_large_help()
+                continue
             readline.add_history(message)
-            if message.lower() == 'exit':
+            if message.split()[0] == 'exit':
                 break
             try:
                 sock.sendall(message.encode())

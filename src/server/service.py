@@ -1,6 +1,6 @@
+import os
 from enum import Enum
-import subprocess, os
-from utils.logger import logger
+from logger import logger
 from typing import List, Dict
 from process import Process, State
 

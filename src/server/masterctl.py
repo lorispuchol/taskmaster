@@ -1,8 +1,8 @@
-from typing import List, Optional, Dict
 import os
+from typing import List, Optional, Dict
 from service import Service
-from utils.logger import logger
-from utils.config import load_config, validateConfig
+from logger import logger
+from config import load_config, validateConfig
 from utils.colors import Color
 
 
@@ -32,9 +32,9 @@ class MasterCtl:
                 self.services[name] = Service(name, new_serv)
             i += 1
 
-    #################################
-    # taskmaster controller commands
-    #################################
+    ###############################
+    # taskmaster control commands #
+    ###############################
 
     def avail(self) -> str:
         """
@@ -119,16 +119,13 @@ class MasterCtl:
                 serv["name"] for serv in new_conf["services"][i:]
             ]:
                 if new_props != self.services[name].props:
-                    messages.append(f"{name}: updated process group")
+                    messages.append(f"{name}: process group updated")
                     messages.append(self.services[name].reload(new_props))
-                    # print(f"{name}: updated process group")
-                    # print(*self.services[name].reload(new_props), sep="\n")
                 else:
-                    messages.append(f"{name}: unchanged process group")
+                    messages.append(f"{name}: process group didn't change")
             # New
             elif name not in [serv["name"] for serv in new_conf["services"][i:]]:
-                # print(f"{name}: added process group")
-                messages.append(f"{name}: added process group")
+                messages.append(f"{name}: process group added")
                 self.services[name] = Service(name, new_props)
             i += 1
 
@@ -141,7 +138,7 @@ class MasterCtl:
         ]
         # Stop and remove the service
         for serv in services_to_remove:
-            messages.append(f"{serv}: removed process group, stopping group's processes")
+            messages.append(f"{serv}: process group removed -> stop its processes")
             messages.append(self.services[serv].stop())
             self.services.pop(serv)
         self.fullconfig = new_conf
