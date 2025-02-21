@@ -1,16 +1,19 @@
-import socket, selectors, signal, sys, argparse
-from logger import logger
-from masterctl import MasterCtl
-from config import load_config, validateConfig
+
+import socket, selectors, signal, sys, argparse, os
 from typing import List, Tuple
 
 ####################
 # Global variables #
 ####################
 
-master: MasterCtl = MasterCtl()
 sel = selectors.DefaultSelector()
 shutdown_flag = False
+
+def load_modules():
+    global logger, MasterCtl, load_config, validateConfig
+    from logger import logger
+    from masterctl import MasterCtl
+    from config import load_config, validateConfig
 
 
 ###########
@@ -51,7 +54,7 @@ def process_monitoring():
     for service in master.services.values():
         for process in service.processes:
             if process.proc is not None and process.proc.poll() is not None:
-                if service.autorestart and process.graceful_stopped == False:
+                if service.autorestart and process.graceful_stop == False:
                     logger.warning(
                         f"{process.name}: {process.proc.pid} exited. Restarting..."
                     )
@@ -193,7 +196,6 @@ def startup_parsing() -> Tuple[str, str]:
 
 
 def taskmasterd() -> None:
-
     config_file, log_level = startup_parsing()  # log_level = "INFO" if not specified
     logger.setLevel(log_level)
 
@@ -216,4 +218,14 @@ def taskmasterd() -> None:
 
 
 if __name__ == "__main__":
-    taskmasterd()
+    try:
+        test = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        test.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        test.bind(("0.0.0.0", 65432))
+    except  Exception as e:
+        print(f"Error: {e}")
+        os._exit(1)
+    else:
+        test.close()
+        load_modules()
+        taskmasterd()

@@ -27,7 +27,7 @@ class Process():
         self.pid: int = 0
         self.props: dict = props
         self.proc: subprocess.Popen | None = None
-        self.graceful_stopped: bool = False
+        self.graceful_stop: bool = False
 
     def status(self) -> str:
         # ls                               BACKOFF   Exited too quickly (process log may have details)
@@ -88,7 +88,7 @@ class Process():
             self.proc.wait()
             self.stopdate = datetime.datetime.now()
             self.state = State.STOPPED
-            self.graceful_stopped = True
+            self.graceful_stop = True
             return f"Stopping {self.name}"
         # return f"Stopping {self.name}"
         # ping:ping_0: stopped
