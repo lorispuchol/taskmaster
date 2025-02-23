@@ -213,3 +213,7 @@ kill -HUP <pid>
 ```bash
 kill -l
 ```
+
+```bash
+kill -l | tr ' ' '\n' | while read sig; do man 3 signal | grep -A1 "$sig " | head -n2; done
+```

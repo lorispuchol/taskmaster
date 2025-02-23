@@ -1,6 +1,17 @@
-import datetime, subprocess
+import datetime, subprocess, signal, time
 from enum import Enum
 from logger import logger
+
+
+def getLogfile(path: str):
+    try:
+        with open(path, "w") as fd:
+            return fd
+    except Exception as e:
+        logger.error(f"Failed to access log file <{path}>: {e}, using /dev/null instead")
+        return subprocess.DEVNULL
+    
+
 class State(Enum):
     """
     The different states of a process: see http://supervisord.org/subprocess.html#process-states
@@ -21,13 +32,11 @@ class Process():
     def __init__(self, name: str, props: dict):
         self.name: str = name
         self.state: State = State.STOPPED
-        self.startdate: datetime.datetime | None = None
-        self.stopdate: datetime.datetime | None = None
-        self.exitdate: datetime.datetime | None = None
-        self.pid: int = 0
+        self.changedate: datetime.datetime | None = None
         self.props: dict = props
         self.proc: subprocess.Popen | None = None
-        self.graceful_stop: bool = False
+        self.graceful_stop: bool = True
+        self.current_retry: int = 1
 
     def status(self) -> str:
         # ls                               BACKOFF   Exited too quickly (process log may have details)
@@ -43,20 +52,23 @@ class Process():
         # print(m)
         # for serv in self.services.values():
         #     print(Color.BOLD + f"\t{serv.name}:".ljust(m + 1), end=Color.END + "\n")
+
+        message: str = ""
         if (self.state == State.STARTING or self.state == State.STOPPING):
-            return f"{self.name}" + (43 - 2 * len(self.name)) * " " + f"{self.state}"
+            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}"
         elif (self.state == State.RUNNING):
-            return (
-                f"{self.name}"
-                + (43 - 2 * len(self.name)) * " "
-                + f"{self.state}\tpid {self.pid},\t uptime {datetime.datetime.now() - self.startdate}"
-            )
+            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}\tpid {self.proc.pid},\t uptime {datetime.datetime.now() - self.changedate}"
         elif self.state == State.STOPPED:
-            return f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}\t{self.stopdate}"
+            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}"
+            if self.changedate is not None:
+                message += f"\t{self.changedate}"
         elif self.state == State.EXITED:
-            return f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}\t{self.exitdate}"
+            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}"
+            if self.changedate is not None:
+                message += f"\t{self.changedate}"
         elif self.state == State.FATAL or self.state == State.BACKOFF:
-            return f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state} Le message derror"
+            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state} Le message d'erreur a set"
+        return message
 
     def start(self) -> str:
         try:
@@ -74,8 +86,13 @@ class Process():
             self.graceful_stop = False
         except FileNotFoundError as e:
             logger.error(f"{e}")
+            self.state = State.BACKOFF
         except Exception as e:
+            self.state = State.BACKOFF
             logger.error(f"Unexpected error: {e}")
+        else:
+            self.state = State.STARTING
+        self.changedate = datetime.datetime.now()
         return f"Starting {self.name}"
         # ping:ping_0: started
         # ping:ping_0: ERROR (already started)
@@ -84,16 +101,28 @@ class Process():
 
 
     def stop(self) -> str:
-        if self.proc is not None:
-            self.proc.terminate()
-            self.proc.wait()
-            self.stopdate = datetime.datetime.now()
-            self.state = State.STOPPED
+        if self.proc is not None and self.state == State.RUNNING or self.state == State.STARTING or self.state == State.BACKOFF:
+            logger.info(f"Stop request received for: {self.name}")
             self.graceful_stop = True
-            return f"Stopping {self.name}"
-        # return f"Stopping {self.name}"
-        # ping:ping_0: stopped
-        # ping:ping_0: ERROR (not running)
+            self.state = State.STOPPING
+            self.changedate = datetime.datetime.now()
+            self.proc.send_signal(signal.Signals[self.props["stopsignal"]].value)
+            self.proc.poll()
+            if self.props["stoptime"] <= 0:
+                self.proc.kill()
+                self.proc.wait()
+                self.state = State.STOPPED
+                self.changedate = datetime.datetime.now()
+                logger.info(f"{self.name}: {self.proc.pid} has been killed")
+                self.proc = None
+                return f"{self.name}: stopped (killed)"
+            elif self.proc.returncode is not None:
+                self.state = State.STOPPED
+                self.changedate = datetime.datetime.now()
+                logger.info(f"{self.name}: {self.proc.pid} has been stopped")
+                self.proc = None
+                return f"{self.name}: stopped"
+            return f"{self.name}: stopping"
         return f"{self.name}: ERROR (not running)"
 
     @property

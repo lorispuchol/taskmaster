@@ -40,6 +40,7 @@ schemaConfig = {
                 "starttime": {
                     "type": "integer",
                     "min": 0,
+                    "max": 10,
                     "default": 1,
                 },
                 "startretries": {
@@ -70,6 +71,7 @@ schemaConfig = {
                 "stoptime": {
                     "type": "integer",
                     "min": 0,
+                    "max": 10,
                     "default": 10,
                 },
                 "env": {

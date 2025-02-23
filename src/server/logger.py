@@ -21,7 +21,7 @@ if not os.path.exists(PATH_LOG_FILE):
 try:
     open(PATH_LOG_FILE, "w").close()
 except Exception as e:
-    print(f"Failed to access log file <log/taskmaster.log>: {e}")
+    print(f"Failed to access log file <{PATH_LOG_FILE}>: {e}")
     sys.exit(1)
 
 if not logger.handlers:

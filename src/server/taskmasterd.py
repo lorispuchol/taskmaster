@@ -1,5 +1,4 @@
-
-import socket, selectors, signal, sys, argparse, os
+import socket, selectors, signal, sys, argparse, os, datetime, time
 from typing import List, Tuple
 
 ####################
@@ -9,10 +8,13 @@ from typing import List, Tuple
 sel = selectors.DefaultSelector()
 shutdown_flag = False
 
+
 def load_modules():
-    global logger, MasterCtl, load_config, validateConfig
+    global logger, MasterCtl, load_config, validateConfig, State, AutoRestart
     from logger import logger
     from masterctl import MasterCtl
+    from process import State
+    from service import AutoRestart
     from config import load_config, validateConfig
 
 
@@ -50,25 +52,146 @@ def init_signal_handling() -> None:
     # TODO: Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
 
 
+##############
+# monitoring #
+##############
+
+
 def process_monitoring():
     for service in master.services.values():
         for process in service.processes:
-            if process.proc is not None and process.proc.poll() is not None:
-                if service.autorestart and process.graceful_stop == False:
-                    logger.warning(
-                        f"{process.name}: {process.proc.pid} exited. Restarting..."
-                    )
+            # AUTO-RESTART
+            # if process.proc is not None and process.proc.poll() is not None:
+            #     if process.graceful_stop == False:
+            #         if service.autorestart == AutoRestart.NEVER:
+            #             logger.error(
+            #                 f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)}"
+            #             )
+            #             process.state = State.EXITED
+            #             process.changedate = datetime.datetime.now()
+            #             process.proc = None
+            #         elif service.autorestart == AutoRestart.ALWAYS or (
+            #             service.autorestart == AutoRestart.UNEXPECTED
+            #             and abs(process.proc.returncode) in service.exitcodes
+            #         ):
+            #             if process.current_retry > service.startretries:
+            #                 logger.critical(
+            #                     f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)} after {service.startretries} autorestart tries"
+            #                 )
+            #                 process.state = State.FATAL
+            #                 process.changedate = datetime.datetime.now()
+            #                 process.proc = None
+            #             elif datetime.datetime.now() - process.changedate >= datetime.timedelta()
+            #             else:
+            #                 logger.error(f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)}")
+                            
+            #                 try:
+            #                     process.start()
+            #                 except Exception as e:
+            #                     print(f"Error restarting process: {e}")
+            #                     # managed_processes.remove(entry)
+            #                     continue
+            #                 # entry["proc"] = new_proc
+            #             # else:
+            #             # managed_processes.remove(entry)
+            #             # print(f"Removed exited process {proc.pid}")
+            
+            # Check BACKOFF process
+            if process.proc is None and process.state == State.BACKOFF:
+                if process.current_retry > service.startretries:
+                    logger.critical(f"{process.name}: reached maximum retries")
+                    process.state = State.FATAL
+                    process.changedate = datetime.datetime.now()
+                elif datetime.datetime.now() - process.changedate > datetime.timedelta(
+                        seconds=process.current_retry
+                    ):
+                        logger.info(f"{process.name}: retrying to start")
+                        process.start()
+                        process.current_retry += 1
+
+            # Check EXITED process
+            if process.proc is not None and process.state == State.EXITED:
+                if service.autorestart == AutoRestart.ALWAYS:
                     try:
+                        logger.info(f"{process.name}: unconditional restart")
                         process.start()
                     except Exception as e:
-                        print(f"Error restarting process: {e}")
-                        # managed_processes.remove(entry)
-                        continue
-                    # entry["proc"] = new_proc
-                # else:
-                # managed_processes.remove(entry)
-                # print(f"Removed exited process {proc.pid}")
+                        logger.critical(f"{process.name} Error restarting: {e}")
+                elif service.autorestart == AutoRestart.UNEXPECTED and abs(process.proc.returncode) not in service.exitcodes:
+                    try:
+                        logger.info(f"{process.name}: conditional restart")
+                        process.start()
+                    except Exception as e:
+                        logger.critical(f"Error restarting process: {e}")
 
+
+            # Check RUNNING process
+            if process.proc is not None and process.state == State.RUNNING:
+                process.proc.poll()
+                if process.proc.returncode is not None:
+                    process.state = State.EXITED
+                    process.changedate = datetime.datetime.now()
+                    if process.proc.returncode in service.exitcodes:
+                        logger.error(f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)}")
+                    else:
+                        logger.error(f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)}")
+
+            # Check STARTING process
+            if process.proc is not None and process.state == State.STARTING:
+                process.proc.poll()
+                # Success
+                if process.proc.returncode is None and datetime.datetime.now() - process.changedate >= datetime.timedelta(
+                    seconds=service.starttime
+                ):
+                    process.state = State.RUNNING
+                    process.changedate = datetime.datetime.now()
+                    logger.info(f"{process.name}: {process.proc.pid} is in running state for now")
+                # Success but exited immediatly
+                elif process.proc.returncode is not None and datetime.datetime.now() - process.changedate >= datetime.timedelta(
+                    seconds=service.starttime
+                ):
+                    process.state = State.EXITED
+                    process.changedate = datetime.datetime.now()
+                    if process.proc.returncode in service.exitcodes:
+                        logger.error(f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)} immediatly after enter in running state")
+                    else:
+                        logger.error(f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)} immediatly after enter in running state")
+                # Failed before enter in running state
+                elif process.proc.returncode is not None and datetime.datetime.now() - process.changedate < datetime.timedelta(
+                    seconds=service.starttime
+                ):
+                    process.state = State.BACKOFF
+                    process.changedate = datetime.datetime.now()
+                    logger.error(f"{process.name}: {process.proc.pid} failed with code {abs(process.proc.returncode)} during starting")
+                    process.proc = None 
+
+
+            # Check STOPPING process
+            if process.proc is not None and process.state == State.STOPPING:
+                # If didn't stop after stop time 
+                if datetime.datetime.now() - process.changedate >= datetime.timedelta(
+                    seconds=service.stoptime
+                ):
+                    logger.error(
+                        f"{process.name}: {process.proc.pid} didn't stop in time"
+                    )
+                    process.proc.kill()
+                    process.proc.wait()
+                    process.state = State.STOPPED
+                    process.changedate = datetime.datetime.now()
+                    logger.info(f"{process.name}: {process.proc.pid} has been killed")
+                    process.proc = None
+                # If stopped before time
+                else:
+                    process.proc.poll()
+                    if process.proc.returncode is not None:
+                        process.state = State.STOPPED
+                        process.changedate = datetime.datetime.now()
+                        logger.info(
+                            f"{process.name}: {process.proc.pid} has been stopped"
+                        )
+                        process.proc = None
+                # Then: do nothing and wait for the next loop to check again
 
 ####################
 #   Server loop    #
@@ -100,17 +223,9 @@ def select_action(cmd: str, args: List[str]) -> str:
     if cmd == "reload":
         return master.reload()
     return f"Unknown command: {cmd}"
-    
 
 
-def accept_connection(sock):
-    conn, addr = sock.accept()
-    logger.info(f"Accept connection from {addr}")
-    conn.setblocking(False)
-    sel.register(conn, selectors.EVENT_READ, data=handle_client)
-
-
-def handle_client(conn):
+def handle_client(conn: socket.socket) -> None:
     addr = conn.getpeername()
     try:
         data = conn.recv(4096)
@@ -133,6 +248,13 @@ def handle_client(conn):
         conn.close()
 
 
+def accept_connection(sock):
+    conn, addr = sock.accept()
+    logger.info(f"Accept connection from {addr}")
+    conn.setblocking(False)
+    sel.register(conn, selectors.EVENT_READ, data=handle_client)
+
+
 def run_server(host="0.0.0.0", port=65432):
 
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -145,9 +267,13 @@ def run_server(host="0.0.0.0", port=65432):
         sel.register(server_sock, selectors.EVENT_READ, data=accept_connection)
         logger.info(f"Server listening on {host}:{port}")
 
+        i: int = 20
         while not shutdown_flag:
-            print("ici") #
-            events = sel.select(timeout=1)
+            if i >= 20:
+                print("ici")  #
+                i = 0
+            i += 1
+            events = sel.select(timeout=0.05)
             for key, mask in events:
                 callback = key.data
                 callback(key.fileobj)
@@ -167,6 +293,7 @@ def run_server(host="0.0.0.0", port=65432):
 ###########################
 # start point and parsing #
 ###########################
+
 
 def startup_parsing() -> Tuple[str, str]:
     """Parses the startup command arguments.
@@ -222,7 +349,7 @@ if __name__ == "__main__":
         test = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         test.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test.bind(("0.0.0.0", 65432))
-    except  Exception as e:
+    except Exception as e:
         print(f"Error: {e}")
         os._exit(1)
     else:

@@ -137,6 +137,7 @@ class MasterCtl:
             not in [new_props["name"] for new_props in new_conf["services"]]
         ]
         # Stop and remove the service
+        # TODO: test for o removed process that doesnt terminate on stop
         for serv in services_to_remove:
             messages.append(f"{serv}: process group removed -> stop its processes")
             messages.append(self.services[serv].stop())

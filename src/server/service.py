@@ -7,22 +7,21 @@ from process import Process, State
 
 class AutoRestart(Enum):
     """Allowed value for 'autorestart' property"""
-
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
 
 
 class StopSignals(Enum):
-    """Allowed value for 'stopsignal' property"""
-
-    TERM = "TERM"
-    HUP = "HUP"
-    INT = "INT"
-    QUIT = "QUIT"
-    KILL = "KILL"
-    USR1 = "USR1"
-    USR2 = "USR2"
+    """Allowed value for 'stopsignal' property
+    Defined in supervisor documentation:"""
+    TERM = "SIGTERM"
+    HUP = "SIGHUP"
+    INT = "SIGINT"
+    QUIT = "SIGQUIT"
+    KILL = "SIGKILL"
+    USR1 = "SIGUSR1"
+    USR2 = "SIGUSR2"
 
 
 class Service:
@@ -82,7 +81,10 @@ class Service:
         """
         messages: List[str] = []
         for process in self.processes:
-            messages.append(process.status())
+            messages.append(f" ——")
+            messages.append("| " + process.status())
+            messages.append(f" ——")
+
         return os.linesep.join(messages)
 
     def reload(self, new_props) -> str:
@@ -105,8 +107,10 @@ class Service:
         messages: List[str] = []
 
         logger.info(f"Starting {self.name}")
-        for process in self.processes:  
-            messages.append(process.start())
+        for process in self.processes:
+            messages.append(f" ——")
+            messages.append("| " + process.start())
+            messages.append(f" ——")
         return os.linesep.join(messages)
 
     def stop(self) -> str:
@@ -115,5 +119,7 @@ class Service:
         """
         messages: List[str] = []
         for process in self.processes:
-            messages.append(process.stop())
+            messages.append(f" ——")
+            messages.append("| " + process.stop())
+            messages.append(f" ——")
         return os.linesep.join(messages)
