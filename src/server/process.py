@@ -8,9 +8,11 @@ def getLogfile(path: str):
         with open(path, "w") as fd:
             return fd
     except Exception as e:
-        logger.error(f"Failed to access log file <{path}>: {e}, using /dev/null instead")
+        logger.error(
+            f"Failed to access log file <{path}>: {e}, using /dev/null instead"
+        )
         return subprocess.DEVNULL
-    
+
 
 class State(Enum):
     """
@@ -28,7 +30,7 @@ class State(Enum):
 
 
 # Inerit from subprocess.Popen
-class Process():
+class Process:
     def __init__(self, name: str, props: dict):
         self.name: str = name
         self.state: State = State.STOPPED
@@ -37,6 +39,9 @@ class Process():
         self.proc: subprocess.Popen | None = None
         self.graceful_stop: bool = True
         self.current_retry: int = 1
+        self.error_message: str = ""
+        if props["autostart"]:
+            self.start()
 
     def status(self) -> str:
         # ls                               BACKOFF   Exited too quickly (process log may have details)
@@ -54,25 +59,52 @@ class Process():
         #     print(Color.BOLD + f"\t{serv.name}:".ljust(m + 1), end=Color.END + "\n")
 
         message: str = ""
-        if (self.state == State.STARTING or self.state == State.STOPPING):
-            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}"
-        elif (self.state == State.RUNNING):
-            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}\tpid {self.proc.pid},\t uptime {datetime.datetime.now() - self.changedate}"
+        if self.state == State.STARTING or self.state == State.STOPPING:
+            message = (
+                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}   "
+            )
+        elif self.state == State.RUNNING:
+            message = (
+                f"{self.name}"
+                + (43 - len(self.name)) * " "
+                + f"{self.state.value}   pid {self.proc.pid},\t uptime {datetime.datetime.now() - self.changedate}"
+            )
         elif self.state == State.STOPPED:
-            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}"
+            message = (
+                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}   "
+            )
             if self.changedate is not None:
-                message += f"\t{self.changedate}"
+                message += f"{self.changedate}"
         elif self.state == State.EXITED:
-            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state}"
+            message = (
+                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}    "
+            )
             if self.changedate is not None:
                 message += f"\t{self.changedate}"
-        elif self.state == State.FATAL or self.state == State.BACKOFF:
-            message = f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state} Le message d'erreur a set"
+        elif self.state == State.FATAL:
+            message = (
+                f"{self.name}"
+                + (43 - len(self.name)) * " "
+                + f"{self.state.value}     {self.error_message}"
+            )
+        elif self.state == State.BACKOFF:
+            message = (
+                f"{self.name}"
+                + (43 - len(self.name)) * " "
+                + f"{self.state.value}   {self.error_message}"
+            )
         return message
 
     def start(self) -> str:
+        if self.state == State.RUNNING or self.state == State.STARTING:
+            return f"{self.name}: ERROR (already started)"
+        if self.state == State.BACKOFF:
+            self.state = State.STARTING
+        logger.info(f"Start request received for: {self.name}")
         try:
-            with open(self.props["stdout"], "w") as f_out, open(self.props["stderr"], "w") as f_err:
+            with open(self.props["stdout"], "w") as f_out, open(
+                self.props["stderr"], "w"
+            ) as f_err:
                 self.proc = subprocess.Popen(
                     self.props["cmd"].split(),
                     stdout=f_out,
@@ -84,24 +116,27 @@ class Process():
                 # while proc.poll() is None:
                 #     pass
             self.graceful_stop = False
-        except FileNotFoundError as e:
-            logger.error(f"{e}")
-            self.state = State.BACKOFF
         except Exception as e:
-            self.state = State.BACKOFF
-            logger.error(f"Unexpected error: {e}")
-        else:
-            self.state = State.STARTING
+            logger.error(f"Unexpected Error trying to start {self.name}: {e}")
+            self.state = State.FATAL
+            self.error_message = str(e)
+            self.changedate = datetime.datetime.now()
+            return f"{self.name}: ERROR (spawn error)"
+
+        self.state = State.STARTING
         self.changedate = datetime.datetime.now()
-        return f"Starting {self.name}"
+        return f"{self.name}: starting"
         # ping:ping_0: started
         # ping:ping_0: ERROR (already started)
         # supervisor> start ls
         # ls: ERROR (spawn error)
 
-
     def stop(self) -> str:
-        if self.proc is not None and self.state == State.RUNNING or self.state == State.STARTING or self.state == State.BACKOFF:
+        if self.proc is not None and (
+            self.state == State.RUNNING
+            or self.state == State.STARTING
+            or self.state == State.BACKOFF
+        ):
             logger.info(f"Stop request received for: {self.name}")
             self.graceful_stop = True
             self.state = State.STOPPING

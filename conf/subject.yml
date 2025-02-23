@@ -1,8 +1,8 @@
 services:
-
   - name: "ping"
     stdout: "ls.stdout"
     cmd: "ping google.com"
+    numprocs: 3
   - name: "lss"
     cmd: "ls -l"
     startretries: 5
@@ -19,6 +19,18 @@ services:
     stdout: "ignore-sigint.stdout"
     stoptime: 10
 
+  - name: "taskm"
+    cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/src.server.taskmasterd.py"
+    # stopsignal: "SIGTERM"
+    stdout: "taskm.stdout"
+    stoptime: 10
+
+  - name: "sock-test"
+    cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/test/sock_test.py"
+    # stopsignal: "SIGTERM"
+    stdout: "sock.stdout"
+    stoptime: 10
+    numprocs: 3
 # Example given by documentation
 # services:
 #   - name: nginx
@@ -40,7 +52,7 @@ services:
 #     env:
 #       STARTED_BY: taskmaster
 #       ANSWER: 42
-  
+
 #   - name: vogsphere
 #     cmd: "/usr/local/bin/vogsphere-worker --no-prefork"
 #     numprocs: 8

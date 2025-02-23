@@ -53,7 +53,13 @@ class MasterCtl:
         messages: List[str] = []
         messages.append(f"Available services:")
         for serv in self.services.values():
-            messages.append(Color.BOLD + f"\t{serv.name}:{os.linesep}" + Color.END + f"\t{serv.props}" + os.linesep)
+            messages.append(
+                Color.BOLD
+                + f"\t{serv.name}:{os.linesep}"
+                + Color.END
+                + f"\t{serv.props}"
+                + os.linesep
+            )
         return os.linesep.join(messages)
 
     def availXL(self) -> str:
@@ -64,7 +70,9 @@ class MasterCtl:
         messages.append(f"Available services:")
         for serv in self.services.values():
             messages.append(Color.BOLD + f"\t{serv.name}:" + Color.END)
-            messages.append("".join(f"\t{k}:\t{v}{os.linesep}" for k, v in vars(serv).items()))
+            messages.append(
+                "".join(f"\t{k}:\t{v}{os.linesep}" for k, v in vars(serv).items())
+            )
         return os.linesep.join(messages)
 
     def terminate(self) -> str:
@@ -119,7 +127,7 @@ class MasterCtl:
                 serv["name"] for serv in new_conf["services"][i:]
             ]:
                 if new_props != self.services[name].props:
-                    messages.append(f"{name}: process group updated")
+                    messages.append(f"{name}: process group updated -> will stop and start")
                     messages.append(self.services[name].reload(new_props))
                 else:
                     messages.append(f"{name}: process group didn't change")
@@ -137,14 +145,13 @@ class MasterCtl:
             not in [new_props["name"] for new_props in new_conf["services"]]
         ]
         # Stop and remove the service
-        # TODO: test for o removed process that doesnt terminate on stop
+        # TODO: test for removed process that doidnt terminate on stop
         for serv in services_to_remove:
-            messages.append(f"{serv}: process group removed -> stop its processes")
+            messages.append(f"{serv}: process group removed -> will stop processes")
             messages.append(self.services[serv].stop())
             self.services.pop(serv)
         self.fullconfig = new_conf
         return os.linesep.join(messages)
-
 
     def start(self, args: Optional[List[str]] = None) -> str:
         """
@@ -178,7 +185,6 @@ class MasterCtl:
             else:
                 logger.warning(f"Service not found: {arg}")
         return os.linesep.join(messages)
-        
 
     def restart(self, args: Optional[List[str]] = None) -> None:
         """

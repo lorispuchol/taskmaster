@@ -7,6 +7,7 @@ from process import Process, State
 
 class AutoRestart(Enum):
     """Allowed value for 'autorestart' property"""
+
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
@@ -15,6 +16,7 @@ class AutoRestart(Enum):
 class StopSignals(Enum):
     """Allowed value for 'stopsignal' property
     Defined in supervisor documentation:"""
+
     TERM = "SIGTERM"
     HUP = "SIGHUP"
     INT = "SIGINT"
@@ -58,7 +60,7 @@ class Service:
         self.stdout: str = props.get("stdout", "/dev/null")
         self.stderr: str = props.get("stderr", "/dev/null")
         # for bonus
-        
+
         self.user: str = props.get("user", None)  # Default: inherit from master
 
         self.props = props
@@ -71,9 +73,9 @@ class Service:
             self.processes.append(
                 Process(
                     name=f"{self.name}_{i+1}" if self.numprocs > 1 else self.name,
-                    props=self.__dict__
+                    props=self.__dict__,
                 )
-            )    
+            )
 
     def status(self) -> str:
         """
@@ -81,10 +83,7 @@ class Service:
         """
         messages: List[str] = []
         for process in self.processes:
-            messages.append(f" ——")
-            messages.append("| " + process.status())
-            messages.append(f" ——")
-
+            messages.append(process.status())
         return os.linesep.join(messages)
 
     def reload(self, new_props) -> str:
@@ -108,9 +107,7 @@ class Service:
 
         logger.info(f"Starting {self.name}")
         for process in self.processes:
-            messages.append(f" ——")
-            messages.append("| " + process.start())
-            messages.append(f" ——")
+            messages.append(process.start())
         return os.linesep.join(messages)
 
     def stop(self) -> str:
@@ -119,7 +116,5 @@ class Service:
         """
         messages: List[str] = []
         for process in self.processes:
-            messages.append(f" ——")
-            messages.append("| " + process.stop())
-            messages.append(f" ——")
+            messages.append(process.stop())
         return os.linesep.join(messages)

@@ -30,7 +30,7 @@ schemaConfig = {
                 "numprocs": {
                     "type": "integer",
                     "min": 1,
-                    "max": 9, # 32 
+                    "max": 9,  # 32
                     "default": 1,
                 },
                 "autostart": {

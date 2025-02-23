@@ -1,20 +1,16 @@
 # taskmaster
 
-TODO: Use cerberus for yaml validation schema
+TODO:
 
-Structure ideas: (to modify if needed)
-
-MasterCtl -> Service -> Process
-
-MasterCtl is the main class.
-MasterCtl contain a list of Services.
-
-Service is the program (nginx in the example is a service).
-Service contain the configuration.
-Service contain a list of Processes. (because we can have multiple processes for the same service)
-
-Process is the instance of the program. (with the pid to kill)
-
+- rewrite process.start() method
+- add tests
+- umask
+- workingdir
+- env
+- user (run with sudo)
+- error on shutdown server
+- add Processes on reload if num procs changed
+- autostart for reload
 
 
 ## Service properties documentation

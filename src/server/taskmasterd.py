@@ -84,7 +84,7 @@ def process_monitoring():
             #             elif datetime.datetime.now() - process.changedate >= datetime.timedelta()
             #             else:
             #                 logger.error(f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)}")
-                            
+
             #                 try:
             #                     process.start()
             #                 except Exception as e:
@@ -95,19 +95,21 @@ def process_monitoring():
             #             # else:
             #             # managed_processes.remove(entry)
             #             # print(f"Removed exited process {proc.pid}")
-            
+
             # Check BACKOFF process
             if process.proc is None and process.state == State.BACKOFF:
                 if process.current_retry > service.startretries:
                     logger.critical(f"{process.name}: reached maximum retries")
                     process.state = State.FATAL
                     process.changedate = datetime.datetime.now()
+                    process.current_retry = 1
                 elif datetime.datetime.now() - process.changedate > datetime.timedelta(
-                        seconds=process.current_retry
-                    ):
-                        logger.info(f"{process.name}: retrying to start")
-                        process.start()
-                        process.current_retry += 1
+                    seconds=process.current_retry
+                ):
+                    logger.info(f"{process.name}: retrying to start")
+                    # process.state = State.STARTING
+                    process.start()
+                    process.current_retry += 1
 
             # Check EXITED process
             if process.proc is not None and process.state == State.EXITED:
@@ -117,13 +119,17 @@ def process_monitoring():
                         process.start()
                     except Exception as e:
                         logger.critical(f"{process.name} Error restarting: {e}")
-                elif service.autorestart == AutoRestart.UNEXPECTED and abs(process.proc.returncode) not in service.exitcodes:
+                elif (
+                    service.autorestart == AutoRestart.UNEXPECTED
+                    and abs(process.proc.returncode) not in service.exitcodes
+                ):
                     try:
                         logger.info(f"{process.name}: conditional restart")
                         process.start()
                     except Exception as e:
-                        logger.critical(f"Error restarting process: {e}")
-
+                        logger.critical(
+                            f"{process.name}: Error restarting process: {e}"
+                        )
 
             # Check RUNNING process
             if process.proc is not None and process.state == State.RUNNING:
@@ -132,43 +138,63 @@ def process_monitoring():
                     process.state = State.EXITED
                     process.changedate = datetime.datetime.now()
                     if process.proc.returncode in service.exitcodes:
-                        logger.error(f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)}")
+                        logger.error(
+                            f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)}"
+                        )
                     else:
-                        logger.error(f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)}")
+                        logger.error(
+                            f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)}"
+                        )
 
             # Check STARTING process
             if process.proc is not None and process.state == State.STARTING:
                 process.proc.poll()
                 # Success
-                if process.proc.returncode is None and datetime.datetime.now() - process.changedate >= datetime.timedelta(
-                    seconds=service.starttime
+                if (
+                    process.proc.returncode is None
+                    and datetime.datetime.now() - process.changedate
+                    >= datetime.timedelta(seconds=service.starttime)
                 ):
                     process.state = State.RUNNING
                     process.changedate = datetime.datetime.now()
-                    logger.info(f"{process.name}: {process.proc.pid} is in running state for now")
+                    logger.info(
+                        f"{process.name}: {process.proc.pid} is in running state for now"
+                    )
                 # Success but exited immediatly
-                elif process.proc.returncode is not None and datetime.datetime.now() - process.changedate >= datetime.timedelta(
-                    seconds=service.starttime
+                elif (
+                    process.proc.returncode is not None
+                    and datetime.datetime.now() - process.changedate
+                    >= datetime.timedelta(seconds=service.starttime)
                 ):
                     process.state = State.EXITED
                     process.changedate = datetime.datetime.now()
                     if process.proc.returncode in service.exitcodes:
-                        logger.error(f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)} immediatly after enter in running state")
+                        logger.error(
+                            f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)} immediatly after enter in running state"
+                        )
                     else:
-                        logger.error(f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)} immediatly after enter in running state")
+                        logger.error(
+                            f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)} immediatly after enter in running state"
+                        )
                 # Failed before enter in running state
-                elif process.proc.returncode is not None and datetime.datetime.now() - process.changedate < datetime.timedelta(
-                    seconds=service.starttime
+                elif (
+                    process.proc.returncode is not None
+                    and datetime.datetime.now() - process.changedate
+                    < datetime.timedelta(seconds=service.starttime)
                 ):
                     process.state = State.BACKOFF
                     process.changedate = datetime.datetime.now()
-                    logger.error(f"{process.name}: {process.proc.pid} failed with code {abs(process.proc.returncode)} during starting")
-                    process.proc = None 
-
+                    logger.error(
+                        f"{process.name}: {process.proc.pid} failed with code {abs(process.proc.returncode)} during starting"
+                    )
+                    process.error_message = (
+                        "Exited too quickly (process log may have details)"
+                    )
+                    process.proc = None
 
             # Check STOPPING process
             if process.proc is not None and process.state == State.STOPPING:
-                # If didn't stop after stop time 
+                # If didn't stop after stop time
                 if datetime.datetime.now() - process.changedate >= datetime.timedelta(
                     seconds=service.stoptime
                 ):
@@ -192,6 +218,7 @@ def process_monitoring():
                         )
                         process.proc = None
                 # Then: do nothing and wait for the next loop to check again
+
 
 ####################
 #   Server loop    #
