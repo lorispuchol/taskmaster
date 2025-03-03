@@ -67,7 +67,7 @@ class Process:
             message = (
                 f"{self.name}"
                 + (43 - len(self.name)) * " "
-                + f"{self.state.value}   pid {self.proc.pid},\t uptime {datetime.datetime.now() - self.changedate}"
+                + f"{self.state.value}   pid {self.proc.pid}, uptime {datetime.datetime.now() - self.changedate}"
             )
         elif self.state == State.STOPPED:
             message = (
@@ -77,10 +77,10 @@ class Process:
                 message += f"{self.changedate}"
         elif self.state == State.EXITED:
             message = (
-                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}  "
+                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}    "
             )
             if self.changedate is not None:
-                message += f"\t{self.changedate}"
+                message += f"{self.changedate}"
         elif self.state == State.FATAL:
             message = (
                 f"{self.name}"
@@ -97,7 +97,7 @@ class Process:
 
     def start(self) -> str:
         logger.info(f"Start request for: {self.name}")
-        if self.state == State.RUNNING or self.state == State.STARTING:
+        if self.state == State.RUNNING or self.state == State.STARTING or self.state == State.STOPPING:
             logger.warning(f"{self.name}: ERROR (already started)")
             return f"{self.name}: ERROR (already started)"
         if self.state == State.BACKOFF:
@@ -135,6 +135,14 @@ class Process:
 
     def stop(self) -> str:
         logger.info(f"Stop request for: {self.name}")
+        self.current_retry = 1
+        if self.proc is None and self.state == State.BACKOFF:
+            self.state = State.STOPPED
+            self.graceful_stop = True
+            self.changedate = datetime.datetime.now()
+            logger.info(f"{self.name}: stopped")
+            self.proc = None
+            return f"{self.name}: stopped"
         if self.proc is not None and (
             self.state == State.RUNNING
             or self.state == State.STARTING
@@ -158,9 +166,12 @@ class Process:
             return f"{self.name}: stopping"
         logger.warning(f"{self.name}: ERROR (not running)")
         return f"{self.name}: ERROR (not running)"
-    
+
     def kill(self) -> str:
-        logger.info(f"Kill request for {self.name}")
+        self.current_retry = 1
+        if self.proc is None or self.state == State.STOPPED or self.state == State.EXITED or self.state == State.FATAL:
+            logger.error(f"Try to kill {self.name} but not running")
+            return f"{self.name}: ERROR (not running)"
         self.proc.kill()
         self.proc.wait()
         self.state = State.STOPPED

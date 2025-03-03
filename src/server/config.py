@@ -45,7 +45,7 @@ schemaConfig = {
                 },
                 "startretries": {
                     "type": "integer",
-                    "min": 1,
+                    "min": 0,
                     "max": 10,
                     "default": 3,
                 },
@@ -83,7 +83,7 @@ schemaConfig = {
                 },
                 "umask": {
                     "type": "integer",
-                    "min": 0o0,
+                    "min": 0o0, # 0o755 OR 0 OR 0o75 or 0755
                     "max": 0o777,
                 },
                 "stdout": {

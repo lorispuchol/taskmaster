@@ -60,41 +60,6 @@ def init_signal_handling() -> None:
 def process_monitoring():
     for service in master.services.values():
         for process in service.processes:
-            # AUTO-RESTART
-            # if process.proc is not None and process.proc.poll() is not None:
-            #     if process.graceful_stop == False:
-            #         if service.autorestart == AutoRestart.NEVER:
-            #             logger.error(
-            #                 f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)}"
-            #             )
-            #             process.state = State.EXITED
-            #             process.changedate = datetime.datetime.now()
-            #             process.proc = None
-            #         elif service.autorestart == AutoRestart.ALWAYS or (
-            #             service.autorestart == AutoRestart.UNEXPECTED
-            #             and abs(process.proc.returncode) in service.exitcodes
-            #         ):
-            #             if process.current_retry > service.startretries:
-            #                 logger.critical(
-            #                     f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)} after {service.startretries} autorestart tries"
-            #                 )
-            #                 process.state = State.FATAL
-            #                 process.changedate = datetime.datetime.now()
-            #                 process.proc = None
-            #             elif datetime.datetime.now() - process.changedate >= datetime.timedelta()
-            #             else:
-            #                 logger.error(f"{process.name}: {process.proc.pid} exited with code {abs(process.proc.returncode)}")
-
-            #                 try:
-            #                     process.start()
-            #                 except Exception as e:
-            #                     print(f"Error restarting process: {e}")
-            #                     # managed_processes.remove(entry)
-            #                     continue
-            #                 # entry["proc"] = new_proc
-            #             # else:
-            #             # managed_processes.remove(entry)
-            #             # print(f"Removed exited process {proc.pid}")
 
             # Check BACKOFF process
             if process.proc is None and process.state == State.BACKOFF:
@@ -106,8 +71,7 @@ def process_monitoring():
                 elif datetime.datetime.now() - process.changedate > datetime.timedelta(
                     seconds=process.current_retry
                 ):
-                    logger.info(f"{process.name}: retrying to start")
-                    # process.state = State.STARTING
+                    logger.info(f"{process.name}: retrying to start ({process.current_retry})")
                     process.start()
                     process.current_retry += 1
 
@@ -145,6 +109,8 @@ def process_monitoring():
                         logger.error(
                             f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)}"
                         )
+                    process.current_retry = 1
+                    process.proc = None
 
             # Check STARTING process
             if process.proc is not None and process.state == State.STARTING:
@@ -160,6 +126,7 @@ def process_monitoring():
                     logger.info(
                         f"{process.name}: {process.proc.pid} is in running state for now"
                     )
+                    process.current_retry = 1
                 # Success but exited immediatly
                 elif (
                     process.proc.returncode is not None
@@ -176,6 +143,9 @@ def process_monitoring():
                         logger.error(
                             f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)} immediatly after enter in running state"
                         )
+                    process.current_retry = 1
+                    process.proc = None
+
                 # Failed before enter in running state
                 elif (
                     process.proc.returncode is not None
@@ -185,7 +155,7 @@ def process_monitoring():
                     process.state = State.BACKOFF
                     process.changedate = datetime.datetime.now()
                     logger.error(
-                        f"{process.name}: {process.proc.pid} failed with code {abs(process.proc.returncode)} during starting"
+                        f"{process.name}: {process.proc.pid} failed with exit code {abs(process.proc.returncode)} during starting"
                     )
                     process.error_message = (
                         "Exited too quickly (process log may have details)"
@@ -291,11 +261,11 @@ def run_server(host="0.0.0.0", port=65432):
 
         i: int = 20
         while not shutdown_flag:
-            if i >= 20:
+            if i >= 200:
                 print("ici")  #
                 i = 0
             i += 1
-            events = sel.select(timeout=0.05)
+            events = sel.select(timeout=0.005)
             for key, mask in events:
                 callback = key.data
                 callback(key.fileobj)
@@ -361,8 +331,8 @@ def taskmasterd() -> None:
     master = MasterCtl(config_file, config)
 
     init_signal_handling()
-    master.init_services()
     logger.info(f"Taskmaster is running - pid: {master.pid}")
+    master.init_services()
     run_server()
 
 

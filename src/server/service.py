@@ -72,7 +72,7 @@ class Service:
         for i in range(self.numprocs):
             self.processes.append(
                 Process(
-                    name=f"{self.name}_{i+1}" if self.numprocs > 1 else self.name,
+                    name=f"{self.name}:{self.name}_{i+1}" if self.numprocs > 1 else self.name,
                     props=self.__dict__,
                 )
             )

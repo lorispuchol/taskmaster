@@ -22,7 +22,7 @@ class MasterCtl:
         Use to instanciate services
         Accept only the last defined service if the service is defined multiple times
         """
-        # If a service is defined multiple times, only the last definition will be retained
+        # If a service is defined multiple times, only the last definition will be saved
         i: int = 1
         for new_serv in self.fullconfig["services"]:
             name = new_serv["name"]
@@ -186,6 +186,7 @@ class MasterCtl:
                 messages.append(self.services[arg].stop())
             else:
                 logger.warning(f"Service not found: {arg}")
+                messages.append(f"Service not found: {arg}")
         return os.linesep.join(messages)
 
     def restart(self, args: Optional[List[str]] = None) -> None:

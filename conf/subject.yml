@@ -9,11 +9,11 @@ services:
   #   starttime: 3
   #   # stdout: "ls.stdout"
   - name: "ignore-sigterm"
-    cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/test/ignore_sigterm.py"
+    cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
     # stopsignal: "SIGTERM"
     startretries: 4
     stdout: "ignore-sigint.stdout"
-    starttime: 6
+    starttime: 10
     stoptime: 10
   # - name: "rien"
   #   cmd: "rien"
@@ -22,17 +22,20 @@ services:
   #   stoptime: 10
 
   # - name: "taskm"
-  #   cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/src.server.taskmasterd.py"
+  #   cmd: "python3 /home/loris/Documents/taskmaster/src.server.taskmasterd.py"
   #   # stopsignal: "SIGTERM"
   #   stdout: "taskm.stdout"
   #   stoptime: 10
 
   # - name: "sock-test"
-  #   cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/test/sock_test.py"
+  #   cmd: "python3 /home/loris/Documents/taskmaster/test/sock_test.py"
   #   # stopsignal: "SIGTERM"
   #   stdout: "sock.stdout"
   #   stoptime: 10
+  #   starttime: 10
   #   numprocs: 3
+  #   startretries: 4
+
 
 # Example given by documentation
 # services:

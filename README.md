@@ -10,9 +10,30 @@ TODO:
 - user (run with sudo)
 - add Processes on reload if num procs changed
 - autostart for reload
-- empecher de lancer plusieurs fois le meme process (start restart reload)
-- error on restart reloal a STOPPED service
+- empecher de lancer plusieurs fois le meme process (start restart reload) (attention apres un stop, il etait possible de start alors que le process etqit en stopping et cela a cree un nouveau process)
+- error on restart reload a STOPPED service
 - add logging and return on kill() method process, add condition on kill() method service
+- remove kill on restart and reload
+
+NOTES:
+
+stop request for: [X] == OK  
+    RUNNING [X]  
+    FATAL [X]  
+    STOPPED [X]  
+    STOPPING [X]  
+    EXITED [X]  
+    BACKOFF [X]  
+    STARTING [X]  
+
+start request for: [X] == OK   
+    RUNNING [X]  
+    FATAL [X]  
+    STOPPED [X]  
+    STOPPING [X]  
+    EXITED [X]  
+    BACKOFF [X] if start request on BACKOFF process. It will ingore the request (doesn't try to start again and doesn't reset the number of retries)  
+    STARTING [X]  
 
 ## Service properties documentation
 
