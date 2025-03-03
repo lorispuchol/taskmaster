@@ -93,9 +93,11 @@ class MasterCtl:
             for serv in self.services.values():
                 messages.append(serv.status())
             return os.linesep.join(messages)
-        for serv in self.services.values():
-            if serv.name in args:
-                messages.append(serv.status())
+        for arg in args:
+            if arg in self.services.keys():
+                messages.append(self.services[arg].status())
+            else:
+                messages.append(f"Service not found: {arg}")
         return os.linesep.join(messages)
 
     def reload(self) -> str:
@@ -145,7 +147,7 @@ class MasterCtl:
             not in [new_props["name"] for new_props in new_conf["services"]]
         ]
         # Stop and remove the service
-        # TODO: test for removed process that doidnt terminate on stop
+        # TODO: test for removed process that didnt terminated on stop request
         for serv in services_to_remove:
             messages.append(f"{serv}: process group removed -> will stop processes")
             messages.append(self.services[serv].stop())
@@ -193,13 +195,13 @@ class MasterCtl:
         messages: List[str] = []
         if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                messages.append(serv.stop())
+                messages.append(serv.kill())
             for serv in self.services.values():
                 messages.append(serv.start())
             return os.linesep.join(messages)
         for arg in args:
             if arg in self.services.keys():
-                messages.append(self.services[arg].stop())
+                messages.append(self.services[arg].kill())
             else:
                 logger.warning(f"Service not found: {arg}")
                 messages.append(f"Service not found: {arg}")

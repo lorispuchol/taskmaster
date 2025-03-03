@@ -93,7 +93,7 @@ class Service:
         # No restart because stop process needs the old properties
         messages: List[str] = []
         if new_props != self.props:
-            messages.append(self.stop())
+            messages.append(self.kill())
             self.setProps(new_props)
             if self.autostart == True:
                 messages.append(self.start())
@@ -104,8 +104,6 @@ class Service:
         Start the service.
         """
         messages: List[str] = []
-
-        logger.info(f"Starting {self.name}")
         for process in self.processes:
             messages.append(process.start())
         return os.linesep.join(messages)
@@ -117,4 +115,13 @@ class Service:
         messages: List[str] = []
         for process in self.processes:
             messages.append(process.stop())
+        return os.linesep.join(messages)
+
+    def kill(self) -> str:
+        """
+        Terminate the service (with sigkill).
+        """
+        messages: List[str] = []
+        for process in self.processes:
+            messages.append(process.kill())
         return os.linesep.join(messages)

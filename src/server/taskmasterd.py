@@ -201,12 +201,7 @@ def process_monitoring():
                     logger.error(
                         f"{process.name}: {process.proc.pid} didn't stop in time"
                     )
-                    process.proc.kill()
-                    process.proc.wait()
-                    process.state = State.STOPPED
-                    process.changedate = datetime.datetime.now()
-                    logger.info(f"{process.name}: {process.proc.pid} has been killed")
-                    process.proc = None
+                    process.kill()
                 # If stopped before time
                 else:
                     process.proc.poll()

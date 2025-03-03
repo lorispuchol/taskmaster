@@ -1,36 +1,39 @@
 services:
-  - name: "ping"
-    stdout: "ls.stdout"
-    cmd: "ping google.com"
-    numprocs: 3
-  - name: "lss"
-    cmd: "ls -l"
-    startretries: 5
-    starttime: 3
-    # stdout: "ls.stdout"
+  # - name: "ping"
+  #   stdout: "ls.stdout"
+  #   cmd: "ping google.com"
+  #   numprocs: 3
+  # - name: "lss"
+  #   cmd: "ls -l"
+  #   startretries: 5
+  #   starttime: 3
+  #   # stdout: "ls.stdout"
   - name: "ignore-sigterm"
     cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/test/ignore_sigterm.py"
     # stopsignal: "SIGTERM"
+    startretries: 4
     stdout: "ignore-sigint.stdout"
+    starttime: 6
     stoptime: 10
-  - name: "rien"
-    cmd: "rien"
-    # stopsignal: "SIGTERM"
-    stdout: "ignore-sigint.stdout"
-    stoptime: 10
+  # - name: "rien"
+  #   cmd: "rien"
+  #   # stopsignal: "SIGTERM"
+  #   stdout: "ignore-sigint.stdout"
+  #   stoptime: 10
 
-  - name: "taskm"
-    cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/src.server.taskmasterd.py"
-    # stopsignal: "SIGTERM"
-    stdout: "taskm.stdout"
-    stoptime: 10
+  # - name: "taskm"
+  #   cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/src.server.taskmasterd.py"
+  #   # stopsignal: "SIGTERM"
+  #   stdout: "taskm.stdout"
+  #   stoptime: 10
 
-  - name: "sock-test"
-    cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/test/sock_test.py"
-    # stopsignal: "SIGTERM"
-    stdout: "sock.stdout"
-    stoptime: 10
-    numprocs: 3
+  # - name: "sock-test"
+  #   cmd: "python3 /Users/lorispuchol/Dev/42/taskmaster/test/sock_test.py"
+  #   # stopsignal: "SIGTERM"
+  #   stdout: "sock.stdout"
+  #   stoptime: 10
+  #   numprocs: 3
+
 # Example given by documentation
 # services:
 #   - name: nginx

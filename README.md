@@ -8,10 +8,11 @@ TODO:
 - workingdir
 - env
 - user (run with sudo)
-- error on shutdown server
 - add Processes on reload if num procs changed
 - autostart for reload
-
+- empecher de lancer plusieurs fois le meme process (start restart reload)
+- error on restart reloal a STOPPED service
+- add logging and return on kill() method process, add condition on kill() method service
 
 ## Service properties documentation
 

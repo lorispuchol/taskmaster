@@ -77,7 +77,7 @@ class Process:
                 message += f"{self.changedate}"
         elif self.state == State.EXITED:
             message = (
-                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}    "
+                f"{self.name}" + (43 - len(self.name)) * " " + f"{self.state.value}  "
             )
             if self.changedate is not None:
                 message += f"\t{self.changedate}"
@@ -96,11 +96,12 @@ class Process:
         return message
 
     def start(self) -> str:
+        logger.info(f"Start request for: {self.name}")
         if self.state == State.RUNNING or self.state == State.STARTING:
+            logger.warning(f"{self.name}: ERROR (already started)")
             return f"{self.name}: ERROR (already started)"
         if self.state == State.BACKOFF:
-            self.state = State.STARTING
-        logger.info(f"Start request received for: {self.name}")
+            self.state = State.STARTING # To avoid a start by monitoring on backoff state which would cause 2 differents starts
         try:
             with open(self.props["stdout"], "w") as f_out, open(
                 self.props["stderr"], "w"
@@ -117,7 +118,7 @@ class Process:
                 #     pass
             self.graceful_stop = False
         except Exception as e:
-            logger.error(f"Unexpected Error trying to start {self.name}: {e}")
+            logger.error(f"Unexpected Error encountered while trying to start {self.name}: {e}")
             self.state = State.FATAL
             self.error_message = str(e)
             self.changedate = datetime.datetime.now()
@@ -125,6 +126,7 @@ class Process:
 
         self.state = State.STARTING
         self.changedate = datetime.datetime.now()
+        logger.info(f"Starting {self.name}")
         return f"{self.name}: starting"
         # ping:ping_0: started
         # ping:ping_0: ERROR (already started)
@@ -132,34 +134,37 @@ class Process:
         # ls: ERROR (spawn error)
 
     def stop(self) -> str:
+        logger.info(f"Stop request for: {self.name}")
         if self.proc is not None and (
             self.state == State.RUNNING
             or self.state == State.STARTING
             or self.state == State.BACKOFF
         ):
-            logger.info(f"Stop request received for: {self.name}")
             self.graceful_stop = True
             self.state = State.STOPPING
             self.changedate = datetime.datetime.now()
             self.proc.send_signal(signal.Signals[self.props["stopsignal"]].value)
             self.proc.poll()
             if self.props["stoptime"] <= 0:
-                self.proc.kill()
-                self.proc.wait()
-                self.state = State.STOPPED
-                self.changedate = datetime.datetime.now()
-                logger.info(f"{self.name}: {self.proc.pid} has been killed")
-                self.proc = None
-                return f"{self.name}: stopped (killed)"
+                return self.kill()
             elif self.proc.returncode is not None:
                 self.state = State.STOPPED
                 self.changedate = datetime.datetime.now()
                 logger.info(f"{self.name}: {self.proc.pid} has been stopped")
                 self.proc = None
+                logger.info(f"Stopping {self.name}")
                 return f"{self.name}: stopped"
+            logger.info(f"Stopping {self.name}")
             return f"{self.name}: stopping"
+        logger.warning(f"{self.name}: ERROR (not running)")
         return f"{self.name}: ERROR (not running)"
-
-    @property
-    def getState(self) -> State:
-        return self.state
+    
+    def kill(self) -> str:
+        logger.info(f"Kill request for {self.name}")
+        self.proc.kill()
+        self.proc.wait()
+        self.state = State.STOPPED
+        self.changedate = datetime.datetime.now()
+        logger.info(f"{self.name}: {self.proc.pid} has been killed")
+        self.proc = None
+        return f"{self.name}: stopped (killed)"
