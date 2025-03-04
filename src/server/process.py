@@ -122,6 +122,7 @@ class Process:
             self.state = State.FATAL
             self.error_message = str(e)
             self.changedate = datetime.datetime.now()
+            self.proc = None
             return f"{self.name}: ERROR (spawn error)"
 
         self.state = State.STARTING

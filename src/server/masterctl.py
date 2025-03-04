@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional, Dict
-from service import Service
+from service import Service, ServiceState
 from logger import logger
 from config import load_config, validateConfig
 from utils.colors import Color
@@ -129,8 +129,11 @@ class MasterCtl:
                 serv["name"] for serv in new_conf["services"][i:]
             ]:
                 if new_props != self.services[name].props:
-                    messages.append(f"{name}: process group updated -> will stop and start")
-                    messages.append(self.services[name].reload(new_props))
+                    messages.append(
+                        f"{name}: process group updated -> will stop and start"
+                    )
+                    messages.append(self.services[name].stop())
+                    self.services[name].state = ServiceState.UPDATING
                 else:
                     messages.append(f"{name}: process group didn't change")
             # New
@@ -151,7 +154,7 @@ class MasterCtl:
         for serv in services_to_remove:
             messages.append(f"{serv}: process group removed -> will stop processes")
             messages.append(self.services[serv].stop())
-            self.services.pop(serv)
+            self.services[serv].state = ServiceState.REMOVING
         self.fullconfig = new_conf
         return os.linesep.join(messages)
 

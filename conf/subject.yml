@@ -1,25 +1,27 @@
 services:
-  # - name: "ping"
-  #   stdout: "ls.stdout"
-  #   cmd: "ping google.com"
-  #   numprocs: 3
-  # - name: "lss"
-  #   cmd: "ls -l"
+  # - name: "ls"
+  #   cmd: "ls"
   #   startretries: 5
-  #   starttime: 3
-  #   # stdout: "ls.stdout"
+  #   starttime: 01
+  #   stdout: "ls.stdout"
   - name: "ignore-sigterm"
     cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
     # stopsignal: "SIGTERM"
     startretries: 4
     stdout: "ignore-sigint.stdout"
     starttime: 10
-    stoptime: 10
+    stoptime: 9
+    numprocs: 3
+  - name: "ping"
+    stdout: "ls.stdout"
+    cmd: "ping google.com"
+    numprocs: 3
   # - name: "rien"
   #   cmd: "rien"
   #   # stopsignal: "SIGTERM"
   #   stdout: "ignore-sigint.stdout"
   #   stoptime: 10
+  #   starttime: 0
 
   # - name: "taskm"
   #   cmd: "python3 /home/loris/Documents/taskmaster/src.server.taskmasterd.py"

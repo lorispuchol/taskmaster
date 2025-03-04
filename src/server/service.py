@@ -26,6 +26,15 @@ class StopSignals(Enum):
     USR2 = "SIGUSR2"
 
 
+class ServiceState(Enum):
+    """State of the the service aftrt a reload query"""
+
+    UPDATING = "updating"
+    RESTARTING = "restarting"
+    NOTHING = "nothing"
+    REMOVING = "removing"
+
+
 class Service:
     def __init__(self, name: str, props: Dict):
         """
@@ -36,6 +45,7 @@ class Service:
         self.processes: List[Process] = []
         self.setProps(props)
         self.initProcesses()
+        self.state: ServiceState = ServiceState.NOTHING
 
     def setProps(self, props: Dict):
         """
@@ -72,7 +82,11 @@ class Service:
         for i in range(self.numprocs):
             self.processes.append(
                 Process(
-                    name=f"{self.name}:{self.name}_{i+1}" if self.numprocs > 1 else self.name,
+                    name=(
+                        f"{self.name}:{self.name}_{i+1}"
+                        if self.numprocs > 1
+                        else self.name
+                    ),
                     props=self.__dict__,
                 )
             )

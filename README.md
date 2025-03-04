@@ -14,6 +14,12 @@ TODO:
 - error on restart reload a STOPPED service
 - add logging and return on kill() method process, add condition on kill() method service
 - remove kill on restart and reload
+- autorestart on unexpected exit (and other ?)
+- plusieurs processus qui log dqns le mem file
+- remove ingnore-sigint from conf, then reload, will attemp to stop but never success because the service item is not in the list anymore
+    
+WIP:
+    remove process and service on reload doen't work
 
 NOTES:
 

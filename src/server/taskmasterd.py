@@ -1,5 +1,5 @@
 import socket, selectors, signal, sys, argparse, os, datetime, time
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 ####################
 # Global variables #
@@ -10,9 +10,11 @@ shutdown_flag = False
 
 
 def load_modules():
-    global logger, MasterCtl, load_config, validateConfig, State, AutoRestart
+    global logger, MasterCtl, load_config, validateConfig, State, AutoRestart, Service, ServiceState, Color
+    from utils.colors import Color
     from logger import logger
     from masterctl import MasterCtl
+    from service import Service, ServiceState
     from process import State
     from service import AutoRestart
     from config import load_config, validateConfig
@@ -56,26 +58,58 @@ def init_signal_handling() -> None:
 # monitoring #
 ##############
 
-
 def process_monitoring():
-    for service in master.services.values():
-        for process in service.processes:
+    
+    service_ready_to_remove: List[Service] = [] # After a reload request
+    service_ready_to_update: List[Service] = [] # After a reload request
 
-            # Check BACKOFF process
+    ## Manage Reload and Restart
+    for service in master.services.values():
+        ## Services removed
+        if service.state == ServiceState.REMOVING:
+            for process in service.processes:
+                # remove service after reload when all processes are stopped
+                if (
+                    process.proc is not None
+                    or process.state == State.STARTING
+                    or process.state == State.STOPPING
+                    or process.state == State.RUNNING
+                ):
+                    break
+                else:
+                    service_ready_to_remove.append(service)
+
+        if service.state == ServiceState.UPDATING:
+            for process in service.processes:
+                if (
+                    process.proc is not None
+                    or process.state == State.STARTING
+                    or process.state == State.STOPPING
+                    or process.state == State.RUNNING
+                ):
+                    break
+                else:
+                    service_ready_to_update.append(service)
+        
+        for process in service.processes:
+            ## Check BACKOFF process
             if process.proc is None and process.state == State.BACKOFF:
                 if process.current_retry > service.startretries:
                     logger.critical(f"{process.name}: reached maximum retries")
                     process.state = State.FATAL
                     process.changedate = datetime.datetime.now()
                     process.current_retry = 1
+                    process.proc = None
                 elif datetime.datetime.now() - process.changedate > datetime.timedelta(
                     seconds=process.current_retry
                 ):
-                    logger.info(f"{process.name}: retrying to start ({process.current_retry})")
+                    logger.info(
+                        f"{process.name}: retrying to start ({process.current_retry})"
+                    )
                     process.start()
                     process.current_retry += 1
 
-            # Check EXITED process
+            ## Check EXITED process
             if process.proc is not None and process.state == State.EXITED:
                 if service.autorestart == AutoRestart.ALWAYS:
                     try:
@@ -95,7 +129,7 @@ def process_monitoring():
                             f"{process.name}: Error restarting process: {e}"
                         )
 
-            # Check RUNNING process
+            ## Check RUNNING process
             if process.proc is not None and process.state == State.RUNNING:
                 process.proc.poll()
                 if process.proc.returncode is not None:
@@ -112,7 +146,7 @@ def process_monitoring():
                     process.current_retry = 1
                     process.proc = None
 
-            # Check STARTING process
+            ## Check STARTING process
             if process.proc is not None and process.state == State.STARTING:
                 process.proc.poll()
                 # Success
@@ -162,7 +196,7 @@ def process_monitoring():
                     )
                     process.proc = None
 
-            # Check STOPPING process
+            ## Check STOPPING process
             if process.proc is not None and process.state == State.STOPPING:
                 # If didn't stop after stop time
                 if datetime.datetime.now() - process.changedate >= datetime.timedelta(
@@ -183,6 +217,28 @@ def process_monitoring():
                         )
                         process.proc = None
                 # Then: do nothing and wait for the next loop to check again
+
+    # Remove services after reload
+    for service in service_ready_to_remove:
+        print(Color.RED + f"ici" + Color.END)
+        if master.services.get(service.name) is not None:
+            print(Color.RED + f"la" + Color.END)
+            master.services.get(service.name).state = ServiceState.NOTHING
+            master.services.pop(service.name)
+            logger.info(f"{service.name}: well terminated -> is no longer managed")
+
+    # Update services after reload
+    for service in service_ready_to_update:
+        master.services.get(service.name).state = ServiceState.NOTHING
+        serv_name: str = service.name
+        for props in master.fullconfig["services"]:
+            if props["name"] == serv_name:
+                new_props = props
+        if master.services.get(service.name) is not None:
+            master.services.get(service.name).state = ServiceState.NOTHING
+            master.services.pop(service.name)
+            logger.info(f"{serv_name}: well terminated -> updated")
+            master.services[serv_name] = Service(serv_name, new_props)
 
 
 ####################
@@ -219,25 +275,25 @@ def select_action(cmd: str, args: List[str]) -> str:
 
 def handle_client(conn: socket.socket) -> None:
     addr = conn.getpeername()
-    try:
-        data = conn.recv(4096)
-        if data:
-            message = data.decode().strip()
-            logger.info(f"Received from {addr}: {message}")
-            response = select_action(message.split()[0], message.split()[1:])
-            conn.sendall(response.encode())
-        else:
-            logger.info(f"Connection closed by {addr}")
-            sel.unregister(conn)
-            conn.close()
-    except ConnectionResetError:
-        logger.warning(f"Connection reset by {addr}")
+    # try:
+    data = conn.recv(4096)
+    if data:
+        message = data.decode().strip()
+        logger.info(f"Received from {addr}: {message}")
+        response = select_action(message.split()[0], message.split()[1:])
+        conn.sendall(response.encode())
+    else:
+        logger.info(f"Connection closed by {addr}")
         sel.unregister(conn)
         conn.close()
-    except Exception as e:
-        logger.error(f"Error with {addr}: {e}")
-        sel.unregister(conn)
-        conn.close()
+    # except ConnectionResetError:
+    #     logger.warning(f"Connection reset by {addr}")
+    #     sel.unregister(conn)
+    #     conn.close()
+    # except Exception as e:
+    #     logger.error(f"Error with {addr}: {e}")
+    #     sel.unregister(conn)
+    #     conn.close()
 
 
 def accept_connection(sock):
@@ -252,34 +308,34 @@ def run_server(host="0.0.0.0", port=65432):
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    try:
-        server_sock.bind((host, port))
-        server_sock.listen()
-        server_sock.setblocking(False)
-        sel.register(server_sock, selectors.EVENT_READ, data=accept_connection)
-        logger.info(f"Server listening on {host}:{port}")
+    # try:
+    server_sock.bind((host, port))
+    server_sock.listen()
+    server_sock.setblocking(False)
+    sel.register(server_sock, selectors.EVENT_READ, data=accept_connection)
+    logger.info(f"Server listening on {host}:{port}")
 
-        i: int = 20
-        while not shutdown_flag:
-            if i >= 200:
-                print("ici")  #
-                i = 0
-            i += 1
-            events = sel.select(timeout=0.005)
-            for key, mask in events:
-                callback = key.data
-                callback(key.fileobj)
-            if not events:
-                process_monitoring()
-                pass
+    i: int = 20
+    while not shutdown_flag:
+        if i >= 200:
+            print("ici")  #
+            i = 0
+        i += 1
+        events = sel.select(timeout=0.005)
+        for key, mask in events:
+            callback = key.data
+            callback(key.fileobj)
+        if not events:
+            process_monitoring()
+            pass
 
-    except Exception as e:
-        logger.error(f"Server error: {e}")
-    finally:
-        logger.info("Cleaning up server...")
-        server_sock.close()
-        sel.close()
-        logger.info("Taskmaster exited")
+    # except Exception as e:
+    #     logger.error(f"Server error: {e}")
+    # finally:
+    #     logger.info("Cleaning up server...")
+    #     server_sock.close()
+    #     sel.close()
+    #     logger.info("Taskmaster exited")
 
 
 ###########################
