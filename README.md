@@ -8,7 +8,7 @@ TODO:
 - workingdir
 - env
 - user (run with sudo)
-- unwrite unused function in Process and Service classes
+- remove unused function in Process and Service classes
 - plusieurs processus qui log dans le meme fichier
 - test shutdown    
 

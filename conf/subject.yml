@@ -4,18 +4,19 @@ services:
   #   startretries: 5
   #   starttime: 01
   #   stdout: "ls.stdout"
-  - name: "ignore-sigterm"
-    cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
-    # stopsignal: "SIGTERM"
-    startretries: 4
-    stdout: "ignore-sigint.stdout"
-    starttime: 10
-    stoptime: 10
-    numprocs: 2
+  # - name: "ignore-sigterm"
+  #   cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
+  #   # stopsignal: "SIGTERM"
+  #   startretries: 4
+  #   stdout: "ignore-sigint.stdout"
+  #   starttime: 10
+  #   stoptime: 10
+  #   numprocs: 2
   - name: "ping"
     stdout: "ls.stdout"
+    # stderr: "ls.stderr"
     cmd: "ping google.com"
-    numprocs: 2
+    numprocs: 1
     stoptime: 10
     exitcodes:
       - 0
@@ -47,7 +48,7 @@ services:
   #   startretries: 4
 
 
-# Example given by documentation
+# Example given by subject
 # services:
 #   - name: nginx
 #     cmd: "/usr/local/bin/nginx -c /etc/nginx/test.conf"
