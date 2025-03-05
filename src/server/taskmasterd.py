@@ -58,39 +58,63 @@ def init_signal_handling() -> None:
 # monitoring #
 ##############
 
+
 def process_monitoring():
-    
-    service_ready_to_remove: List[Service] = [] # After a reload request
-    service_ready_to_update: List[Service] = [] # After a reload request
+
+    services_ready_to_remove: List[Service] = []  # After a reload request
+    services_ready_to_update: List[Service] = []  # After a reload request
+    services_ready_to_restart: List[Service] = []  # After a restart request
 
     ## Manage Reload and Restart
     for service in master.services.values():
         ## Services removed
         if service.state == ServiceState.REMOVING:
+            isReady: bool = False
             for process in service.processes:
-                # remove service after reload when all processes are stopped
                 if (
-                    process.proc is not None
-                    or process.state == State.STARTING
+                    process.state == State.STARTING
                     or process.state == State.STOPPING
                     or process.state == State.RUNNING
                 ):
+                    isReady = False
                     break
                 else:
-                    service_ready_to_remove.append(service)
+                    isReady = True
+            if isReady:
+                services_ready_to_remove.append(service)
 
+        ## Services updated
         if service.state == ServiceState.UPDATING:
+            isReady: bool = False
             for process in service.processes:
                 if (
-                    process.proc is not None
-                    or process.state == State.STARTING
+                    process.state == State.STARTING
                     or process.state == State.STOPPING
                     or process.state == State.RUNNING
                 ):
+                    isReady = False
                     break
                 else:
-                    service_ready_to_update.append(service)
-        
+                    isReady = True
+            if isReady:
+                services_ready_to_update.append(service)
+
+        ## Services restarted
+        if service.state == ServiceState.RESTARTING:
+            isReady: bool = False
+            for process in service.processes:
+                if (
+                    process.state == State.STARTING
+                    or process.state == State.STOPPING
+                    or process.state == State.RUNNING
+                ):
+                    isReady = False
+                    break
+                else:
+                    isReady = True
+            if isReady:
+                services_ready_to_restart.append(service)
+
         for process in service.processes:
             ## Check BACKOFF process
             if process.proc is None and process.state == State.BACKOFF:
@@ -99,7 +123,6 @@ def process_monitoring():
                     process.state = State.FATAL
                     process.changedate = datetime.datetime.now()
                     process.current_retry = 1
-                    process.proc = None
                 elif datetime.datetime.now() - process.changedate > datetime.timedelta(
                     seconds=process.current_retry
                 ):
@@ -111,16 +134,18 @@ def process_monitoring():
 
             ## Check EXITED process
             if process.proc is not None and process.state == State.EXITED:
-                if service.autorestart == AutoRestart.ALWAYS:
+                if service.autorestart == AutoRestart.ALWAYS.value:
+                    # process.proc = None
                     try:
                         logger.info(f"{process.name}: unconditional restart")
                         process.start()
                     except Exception as e:
                         logger.critical(f"{process.name} Error restarting: {e}")
                 elif (
-                    service.autorestart == AutoRestart.UNEXPECTED
+                    service.autorestart == AutoRestart.UNEXPECTED.value
                     and abs(process.proc.returncode) not in service.exitcodes
                 ):
+                    # process.proc = None
                     try:
                         logger.info(f"{process.name}: conditional restart")
                         process.start()
@@ -128,6 +153,8 @@ def process_monitoring():
                         logger.critical(
                             f"{process.name}: Error restarting process: {e}"
                         )
+                else:
+                    process.proc = None
 
             ## Check RUNNING process
             if process.proc is not None and process.state == State.RUNNING:
@@ -135,7 +162,7 @@ def process_monitoring():
                 if process.proc.returncode is not None:
                     process.state = State.EXITED
                     process.changedate = datetime.datetime.now()
-                    if process.proc.returncode in service.exitcodes:
+                    if abs(process.proc.returncode) in service.exitcodes:
                         logger.error(
                             f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)}"
                         )
@@ -144,7 +171,6 @@ def process_monitoring():
                             f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)}"
                         )
                     process.current_retry = 1
-                    process.proc = None
 
             ## Check STARTING process
             if process.proc is not None and process.state == State.STARTING:
@@ -169,7 +195,7 @@ def process_monitoring():
                 ):
                     process.state = State.EXITED
                     process.changedate = datetime.datetime.now()
-                    if process.proc.returncode in service.exitcodes:
+                    if abs(process.proc.returncode) in service.exitcodes:
                         logger.error(
                             f"{process.name}: {process.proc.pid} exited expectedly with code {abs(process.proc.returncode)} immediatly after enter in running state"
                         )
@@ -178,7 +204,6 @@ def process_monitoring():
                             f"{process.name}: {process.proc.pid} exited unexpectedly with code {abs(process.proc.returncode)} immediatly after enter in running state"
                         )
                     process.current_retry = 1
-                    process.proc = None
 
                 # Failed before enter in running state
                 elif (
@@ -216,30 +241,32 @@ def process_monitoring():
                             f"{process.name}: {process.proc.pid} has been stopped"
                         )
                         process.proc = None
-                # Then: do nothing and wait for the next loop to check again
+        # Then: do nothing and wait for the next loop to check again
 
     # Remove services after reload
-    for service in service_ready_to_remove:
-        print(Color.RED + f"ici" + Color.END)
+    for service in services_ready_to_remove:
         if master.services.get(service.name) is not None:
-            print(Color.RED + f"la" + Color.END)
             master.services.get(service.name).state = ServiceState.NOTHING
             master.services.pop(service.name)
             logger.info(f"{service.name}: well terminated -> is no longer managed")
 
-    # Update services after reload
-    for service in service_ready_to_update:
-        master.services.get(service.name).state = ServiceState.NOTHING
-        serv_name: str = service.name
-        for props in master.fullconfig["services"]:
-            if props["name"] == serv_name:
-                new_props = props
+    # Update services after reload (remove then recreate)
+    for service in services_ready_to_update:
         if master.services.get(service.name) is not None:
+            serv_name: str = service.name
+            for props in master.fullconfig["services"]:
+                if props["name"] == serv_name:
+                    new_props: Dict = props
             master.services.get(service.name).state = ServiceState.NOTHING
             master.services.pop(service.name)
-            logger.info(f"{serv_name}: well terminated -> updated")
+            logger.info(f"{serv_name}: well terminated -> updating")
             master.services[serv_name] = Service(serv_name, new_props)
 
+    for service in services_ready_to_restart:
+        if master.services.get(service.name) is not None:
+            master.services.get(service.name).state = ServiceState.NOTHING
+            logger.info(f"{service.name}: well terminated -> restarting")
+            master.services.get(service.name).start()
 
 ####################
 #   Server loop    #
@@ -275,25 +302,25 @@ def select_action(cmd: str, args: List[str]) -> str:
 
 def handle_client(conn: socket.socket) -> None:
     addr = conn.getpeername()
-    # try:
-    data = conn.recv(4096)
-    if data:
-        message = data.decode().strip()
-        logger.info(f"Received from {addr}: {message}")
-        response = select_action(message.split()[0], message.split()[1:])
-        conn.sendall(response.encode())
-    else:
-        logger.info(f"Connection closed by {addr}")
+    try:
+        data = conn.recv(4096)
+        if data:
+            message = data.decode().strip()
+            logger.info(f"Received from {addr}: {message}")
+            response = select_action(message.split()[0], message.split()[1:])
+            conn.sendall(response.encode())
+        else:
+            logger.info(f"Connection closed by {addr}")
+            sel.unregister(conn)
+            conn.close()
+    except ConnectionResetError:
+        logger.warning(f"Connection reset by {addr}")
         sel.unregister(conn)
         conn.close()
-    # except ConnectionResetError:
-    #     logger.warning(f"Connection reset by {addr}")
-    #     sel.unregister(conn)
-    #     conn.close()
-    # except Exception as e:
-    #     logger.error(f"Error with {addr}: {e}")
-    #     sel.unregister(conn)
-    #     conn.close()
+    except Exception as e:
+        logger.error(f"Error with {addr}: {e}")
+        sel.unregister(conn)
+        conn.close()
 
 
 def accept_connection(sock):
@@ -308,34 +335,33 @@ def run_server(host="0.0.0.0", port=65432):
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    # try:
-    server_sock.bind((host, port))
-    server_sock.listen()
-    server_sock.setblocking(False)
-    sel.register(server_sock, selectors.EVENT_READ, data=accept_connection)
-    logger.info(f"Server listening on {host}:{port}")
+    try:
+        server_sock.bind((host, port))
+        server_sock.listen()
+        server_sock.setblocking(False)
+        sel.register(server_sock, selectors.EVENT_READ, data=accept_connection)
+        logger.info(f"Server listening on {host}:{port}")
 
-    i: int = 20
-    while not shutdown_flag:
-        if i >= 200:
-            print("ici")  #
-            i = 0
-        i += 1
-        events = sel.select(timeout=0.005)
-        for key, mask in events:
-            callback = key.data
-            callback(key.fileobj)
-        if not events:
-            process_monitoring()
-            pass
-
-    # except Exception as e:
-    #     logger.error(f"Server error: {e}")
-    # finally:
-    #     logger.info("Cleaning up server...")
-    #     server_sock.close()
-    #     sel.close()
-    #     logger.info("Taskmaster exited")
+        i: int = 20
+        while not shutdown_flag:
+            if i >= 200:
+                print("ici")  #
+                i = 0
+            i += 1
+            events = sel.select(timeout=0.005)
+            for key, mask in events:
+                callback = key.data
+                callback(key.fileobj)
+            if not events:
+                process_monitoring()
+                pass
+    except Exception as e:
+        logger.error(f"Server error: {e}")
+    finally:
+        logger.info("Cleaning up server...")
+        server_sock.close()
+        sel.close()
+        logger.info("Taskmaster exited")
 
 
 ###########################

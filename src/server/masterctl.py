@@ -199,17 +199,19 @@ class MasterCtl:
         messages: List[str] = []
         if args is None or len(args) == 0 or (args[0] == "all" and len(args) == 1):
             for serv in self.services.values():
-                messages.append(serv.kill())
-            for serv in self.services.values():
-                messages.append(serv.start())
+                messages.append(serv.stop())
+                serv.state = ServiceState.RESTARTING
+            # for serv in self.services.values():
+            #     messages.append(serv.start())
             return os.linesep.join(messages)
         for arg in args:
             if arg in self.services.keys():
-                messages.append(self.services[arg].kill())
+                messages.append(self.services[arg].stop())
+                self.services[arg].state = ServiceState.RESTARTING
             else:
                 logger.warning(f"Service not found: {arg}")
                 messages.append(f"Service not found: {arg}")
-        for arg in args:
-            if arg in self.services.keys():
-                messages.append(self.services[arg].start())
+        # for arg in args:
+        #     if arg in self.services.keys():
+        #         messages.append(self.services[arg].start())
         return os.linesep.join(messages)

@@ -7,7 +7,6 @@ from process import Process, State
 
 class AutoRestart(Enum):
     """Allowed value for 'autorestart' property"""
-
     NEVER = "never"
     ALWAYS = "always"
     UNEXPECTED = "unexpected"
@@ -16,7 +15,6 @@ class AutoRestart(Enum):
 class StopSignals(Enum):
     """Allowed value for 'stopsignal' property
     Defined in supervisor documentation:"""
-
     TERM = "SIGTERM"
     HUP = "SIGHUP"
     INT = "SIGINT"
@@ -27,12 +25,11 @@ class StopSignals(Enum):
 
 
 class ServiceState(Enum):
-    """State of the the service aftrt a reload query"""
-
-    UPDATING = "updating"
-    RESTARTING = "restarting"
-    NOTHING = "nothing"
-    REMOVING = "removing"
+    """State of the the service after a reload query"""
+    UPDATING = "UPDATING"
+    RESTARTING = "RESTARTING"
+    NOTHING = "NOTHING"
+    REMOVING = "REMOVING"
 
 
 class Service:

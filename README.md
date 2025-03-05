@@ -8,38 +8,29 @@ TODO:
 - workingdir
 - env
 - user (run with sudo)
-- add Processes on reload if num procs changed
-- autostart for reload
-- empecher de lancer plusieurs fois le meme process (start restart reload) (attention apres un stop, il etait possible de start alors que le process etqit en stopping et cela a cree un nouveau process)
-- error on restart reload a STOPPED service
-- add logging and return on kill() method process, add condition on kill() method service
-- remove kill on restart and reload
-- autorestart on unexpected exit (and other ?)
-- plusieurs processus qui log dqns le mem file
-- remove ingnore-sigint from conf, then reload, will attemp to stop but never success because the service item is not in the list anymore
-    
-WIP:
-    remove process and service on reload doen't work
+- unwrite unused function in Process and Service classes
+- plusieurs processus qui log dans le meme fichier
+- test shutdown    
 
 NOTES:
 
 stop request for: [X] == OK  
-    RUNNING [X]  
-    FATAL [X]  
-    STOPPED [X]  
-    STOPPING [X]  
-    EXITED [X]  
-    BACKOFF [X]  
-    STARTING [X]  
+    RUNNING []  
+    FATAL []  
+    STOPPED []  
+    STOPPING []  
+    EXITED []  
+    BACKOFF []  
+    STARTING []  
 
 start request for: [X] == OK   
-    RUNNING [X]  
-    FATAL [X]  
-    STOPPED [X]  
-    STOPPING [X]  
-    EXITED [X]  
-    BACKOFF [X] if start request on BACKOFF process. It will ingore the request (doesn't try to start again and doesn't reset the number of retries)  
-    STARTING [X]  
+    RUNNING []  
+    FATAL []  
+    STOPPED []  
+    STOPPING []  
+    EXITED []  
+    BACKOFF [] if start request on BACKOFF process. It will ingore the request (doesn't try to start again and doesn't reset the number of retries)  
+    STARTING []  
 
 ## Service properties documentation
 

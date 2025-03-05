@@ -10,12 +10,20 @@ services:
     startretries: 4
     stdout: "ignore-sigint.stdout"
     starttime: 10
-    stoptime: 9
-    numprocs: 3
+    stoptime: 10
+    numprocs: 2
   - name: "ping"
     stdout: "ls.stdout"
     cmd: "ping google.com"
-    numprocs: 3
+    numprocs: 2
+    stoptime: 10
+    exitcodes:
+      - 0
+      - 1
+      # - 15
+    autorestart: always
+    autostart: false
+
   # - name: "rien"
   #   cmd: "rien"
   #   # stopsignal: "SIGTERM"
