@@ -345,7 +345,7 @@ def run_server(host="0.0.0.0", port=65432):
         i: int = 20
         while not shutdown_flag:
             if i >= 200:
-                print("ici")  #
+                # print("ici")  #
                 i = 0
             i += 1
             events = sel.select(timeout=0.005)
