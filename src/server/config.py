@@ -3,11 +3,6 @@ from logger import logger
 from service import StopSignals, AutoRestart
 from typing import Dict
 
-
-# Define the configuration schema
-# TODO Add the missing below properties for unrequired fields to avoid KeyError ?
-# "nullable": True,
-# "default": None,
 schemaConfig = {
     "services": {
         "type": "list",
@@ -21,38 +16,42 @@ schemaConfig = {
                     "empty": False,
                     "regex": "^(?!all$)[A-Za-z0-9_-]+$",
                     "maxlength": 20,
+                    "nullable": False,
                 },
                 "cmd": {
                     "type": "string",
                     "required": True,
                     "empty": False,
+                    "nullable": False,
+                    "maxlength": 20,
                 },
                 "numprocs": {
                     "type": "integer",
                     "min": 1,
                     "max": 9,  # 32
-                    "default": 1,
+                    "nullable": False,
                 },
                 "autostart": {
                     "type": "boolean",
-                    "default": True,
+                    "nullable": False,
                 },
                 "starttime": {
                     "type": "integer",
                     "min": 0,
                     "max": 10,
-                    "default": 1,
+                    "nullable": False,
                 },
                 "startretries": {
                     "type": "integer",
                     "min": 0,
                     "max": 10,
-                    "default": 3,
+                    "nullable": False,
                 },
                 "autorestart": {
                     "type": "string",
                     "allowed": [v.value for v in AutoRestart],
-                    "default": AutoRestart.UNEXPECTED.value,
+                    "empty": False,
+                    "nullable": False,
                 },
                 "exitcodes": {
                     "type": "list",
@@ -60,41 +59,55 @@ schemaConfig = {
                         "type": "integer",
                         "min": 0,
                         "max": 255,
+                        "nullable": False,
                     },
-                    "default": [0],  # success exit code
+                    "empty": False,
+                    "nullable": False,
                 },
                 "stopsignal": {
                     "type": "string",
                     "allowed": [v.value for v in StopSignals],
-                    "default": StopSignals.TERM.value,
+                    "empty": False,
+                    "nullable": False,
+
                 },
                 "stoptime": {
                     "type": "integer",
                     "min": 0,
                     "max": 10,
-                    "default": 10,
+                    "nullable": False,
                 },
                 "env": {
-                    "type": "dict",
+                    "type": "dict", # need schema ?
+                    "empty": False,
+                    "nullable": False,
                 },
                 "workingdir": {
                     "type": "string",
                     "empty": False,
+                    "nullable": False,
                 },
                 "umask": {
                     "type": "integer",
                     "min": 0o0, # 0o755 OR 0 OR 0o75 or 0755
                     "max": 0o777,
+                    "nullable": False,
                 },
                 "stdout": {
                     "type": "string",
+                    "empty": False,
+                    "nullable": False,
                 },
                 "stderr": {
                     "type": "string",
+                    "empty": False,
+                    "nullable": False,
                 },
                 # for bonus
                 "user": {
                     "type": "string",
+                    "empty": False,
+                    "nullable": False,
                 },
             },
         },

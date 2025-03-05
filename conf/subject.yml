@@ -22,8 +22,8 @@ services:
       - 0
       - 1
       # - 15
-    autorestart: always
-    autostart: false
+    autorestart: never
+    autostart: True
 
   # - name: "rien"
   #   cmd: "rien"
