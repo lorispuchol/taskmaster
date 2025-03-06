@@ -61,8 +61,8 @@ class Service:
         )  # No need restart if changed
         self.stopsignal: str = props.get("stopsignal", StopSignals.TERM.value)
         self.stoptime: int = props.get("stoptime", 10)
-        self.env: Dict = props.get("env", {})
-        self.workingdir: str = props.get("workingdir", "/tmp")
+        self.env: Dict = props.get("env", None)
+        self.workingdir: str = props.get("workingdir", None)
         self.umask: int = props.get("umask", -1)  # Default: inherit from master
         self.stdout: str = props.get("stdout", "/dev/null")
         self.stderr: str = props.get("stderr", "/dev/null")

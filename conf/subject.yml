@@ -4,6 +4,7 @@ services:
   #   startretries: 5
   #   starttime: 01
   #   stdout: "ls.stdout"
+
   # - name: "ignore-sigterm"
   #   cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
   #   # stopsignal: "SIGTERM"
@@ -12,11 +13,59 @@ services:
   #   starttime: 10
   #   stoptime: 10
   #   numprocs: 2
-  - name: "ping"
-    stdout: "ls.stdout"
-    # stderr: "ls.stderr"
-    cmd: "ping google.com"
+
+  - name: "mkdir"
+    stdout: "tmp/mkdir.stdout"
+    stderr: "tmp/mkdir.stderr"
+    cmd: "mkdir tmp/folder"
     numprocs: 1
+    stoptime: 10
+    exitcodes:
+      - 0
+    autorestart: never
+    autostart: True
+    startretries: 0
+    starttime: 0
+    umask: 077
+    user: "loris"
+
+  - name: "touch"
+    stdout: "tmp/touch.stdout"
+    stderr: "tmp/touch.stderr"
+    cmd: "touch tmp/nothing"
+    numprocs: 1
+    stoptime: 10
+    autorestart: never
+    autostart: True
+
+  - name: "pwd"
+    stdout: "/home/loris/Documents/taskmaster/tmp/pwd.stdout"
+    stderr: "/home/loris/Documents/taskmaster/tmp/pwd.stderr"
+    cmd: "pwd"
+    numprocs: 1
+    starttime: 0
+    autorestart: never
+    autostart: True
+    workingdir: "/home/loris/Documents/"
+
+  - name: "env"
+    stdout: "/home/loris/Documents/taskmaster/tmp/env.stdout"
+    stderr: "/home/loris/Documents/taskmaster/tmp/env.stderr"
+    cmd: "env"
+    numprocs: 1
+    starttime: 0
+    autorestart: never
+    autostart: True
+    env: # {} for empty env
+      "TEST1": ""
+      "TEST2": "test2"
+
+
+  - name: "ping"
+    stdout: "tmp/ping.stdout"
+    stderr: "tmp/ping.stderr"
+    cmd: "ping google.com"
+    numprocs: 3
     stoptime: 10
     exitcodes:
       - 0
@@ -24,6 +73,17 @@ services:
       # - 15
     autorestart: never
     autostart: True
+    user: "loris"
+
+  - name: "vmstat"
+    cmd: "vmstat 1"
+    stopsignal: "SIGTERM"
+    stdout: "tmp/vmstat.stdout"
+    stderr: "tmp/vmstat.stderr"
+    stoptime: 10
+    starttime: 0
+    numprocs: 1
+    startretries: 4
 
   # - name: "rien"
   #   cmd: "rien"

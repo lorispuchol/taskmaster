@@ -171,3 +171,4 @@ taskmaster.log
 *.log
 *.stdout
 *.stderr
+tmp/

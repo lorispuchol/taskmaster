@@ -103,8 +103,8 @@ class Process:
         if self.state == State.BACKOFF:
             self.state = State.STARTING # To avoid a start by monitoring on backoff state which would cause 2 differents starts
         try:
-            with open(self.props["stdout"], "w") as f_out, open(
-                self.props["stderr"], "w"
+            with open(self.props["stdout"], "a") as f_out, open(
+                self.props["stderr"], "a"
             ) as f_err:
                 self.proc = subprocess.Popen(
                     self.props["cmd"].split(),
@@ -112,13 +112,17 @@ class Process:
                     stderr=f_err,
                     stdin=subprocess.DEVNULL,
                     text=True,
+                    umask=self.props["umask"],
+                    user=self.props["user"],
+                    cwd=self.props["workingdir"],
+                    env=self.props["env"],
                 )
                 # print(self.name, self.proc.pid)
                 # while proc.poll() is None:
                 #     pass
             self.graceful_stop = False
         except Exception as e:
-            logger.error(f"Unexpected Error encountered while trying to start {self.name}: {e}")
+            logger.critical(f"Unexpected Error encountered while trying to start {self.name}: {e}")
             self.state = State.FATAL
             self.error_message = str(e)
             self.changedate = datetime.datetime.now()

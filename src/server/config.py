@@ -23,7 +23,7 @@ schemaConfig = {
                     "required": True,
                     "empty": False,
                     "nullable": False,
-                    "maxlength": 20,
+                    "maxlength": 100,
                 },
                 "numprocs": {
                     "type": "integer",
@@ -69,7 +69,6 @@ schemaConfig = {
                     "allowed": [v.value for v in StopSignals],
                     "empty": False,
                     "nullable": False,
-
                 },
                 "stoptime": {
                     "type": "integer",
@@ -78,8 +77,15 @@ schemaConfig = {
                     "nullable": False,
                 },
                 "env": {
-                    "type": "dict", # need schema ?
-                    "empty": False,
+                    "type": "dict",  # need schema ?
+                    "allow_unknown": True,
+                    "valuesrules": {
+                        "type": "string",
+                        "empty": True,
+                        "nullable": False,
+                    },
+                    "keysrules": {"type": "string", "empty": False, "nullable": False},
+                    "empty": True,
                     "nullable": False,
                 },
                 "workingdir": {
@@ -88,8 +94,9 @@ schemaConfig = {
                     "nullable": False,
                 },
                 "umask": {
+                    # format 0o755 OR 0 OR 0o75 or 0755
                     "type": "integer",
-                    "min": 0o0, # 0o755 OR 0 OR 0o75 or 0755
+                    "min": 0o0,
                     "max": 0o777,
                     "nullable": False,
                 },

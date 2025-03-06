@@ -20,9 +20,8 @@ class MasterCtl:
     def init_services(self) -> None:
         """
         Use to instanciate services
-        Accept only the last defined service if the service is defined multiple times
+        If a service is defined multiple times, it remains only the last defition
         """
-        # If a service is defined multiple times, only the last definition will be saved
         i: int = 1
         for new_serv in self.fullconfig["services"]:
             name = new_serv["name"]

@@ -4,13 +4,8 @@ TODO:
 
 - rewrite process.start() method
 - add tests
-- umask
-- workingdir
-- env
-- user (run with sudo)
 - remove unused function in Process and Service classes
-- plusieurs processus qui log dans le meme fichier
-- test shutdown    
+- test shutdown
 
 NOTES:
 
