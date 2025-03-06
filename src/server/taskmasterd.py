@@ -1,4 +1,4 @@
-import socket, selectors, signal, sys, argparse, os, datetime, time
+import socket, selectors, signal, sys, argparse, os, datetime
 from typing import List, Tuple, Dict
 
 ####################
@@ -51,7 +51,6 @@ def init_signal_handling() -> None:
     signal.signal(signal.SIGQUIT, signal_handler)
     signal.signal(signal.SIGHUP, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    # TODO: Add signals is necessary ? (SIGTERM, SIGKILL, SIGUSR1, SIGUSR2 ?)
 
 
 ##############
@@ -268,6 +267,7 @@ def process_monitoring():
             logger.info(f"{service.name}: well terminated -> restarting")
             master.services.get(service.name).start()
 
+
 ####################
 #   Server loop    #
 ####################
@@ -303,7 +303,7 @@ def select_action(cmd: str, args: List[str]) -> str:
 def handle_client(conn: socket.socket) -> None:
     addr = conn.getpeername()
     try:
-        data = conn.recv(4096)
+        data = conn.recv(8192)
         if data:
             message = data.decode().strip()
             logger.info(f"Received from {addr}: {message}")
@@ -341,13 +341,7 @@ def run_server(host="0.0.0.0", port=65432):
         server_sock.setblocking(False)
         sel.register(server_sock, selectors.EVENT_READ, data=accept_connection)
         logger.info(f"Server listening on {host}:{port}")
-
-        i: int = 20
         while not shutdown_flag:
-            if i >= 200:
-                # print("ici")  #
-                i = 0
-            i += 1
             events = sel.select(timeout=0.005)
             for key, mask in events:
                 callback = key.data

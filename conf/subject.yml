@@ -5,14 +5,14 @@ services:
   #   starttime: 01
   #   stdout: "ls.stdout"
 
-  # - name: "ignore-sigterm"
-  #   cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
-  #   # stopsignal: "SIGTERM"
-  #   startretries: 4
-  #   stdout: "ignore-sigint.stdout"
-  #   starttime: 10
-  #   stoptime: 10
-  #   numprocs: 2
+  - name: "ignore-sigterm"
+    cmd: "python3 /home/loris/Documents/taskmaster/test/ignore_sigterm.py"
+    # stopsignal: "SIGTERM"
+    startretries: 4
+    stdout: "ignore-sigint.stdout"
+    starttime: 10
+    stoptime: 10
+    numprocs: 2
 
   - name: "mkdir"
     stdout: "tmp/mkdir.stdout"
@@ -57,7 +57,7 @@ services:
     autorestart: never
     autostart: True
     env: # {} for empty env
-      "TEST1": ""
+      "TEST1": "test1"
       "TEST2": "test2"
 
 
@@ -65,8 +65,8 @@ services:
     stdout: "tmp/ping.stdout"
     stderr: "tmp/ping.stderr"
     cmd: "ping google.com"
-    numprocs: 3
-    stoptime: 10
+    numprocs: 2
+    stoptime: 8
     exitcodes:
       - 0
       - 1

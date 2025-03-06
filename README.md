@@ -1,32 +1,5 @@
 # taskmaster
 
-TODO:
-
-- rewrite process.start() method
-- add tests
-- remove unused function in Process and Service classes
-- test shutdown
-
-NOTES:
-
-stop request for: [X] == OK  
-    RUNNING []  
-    FATAL []  
-    STOPPED []  
-    STOPPING []  
-    EXITED []  
-    BACKOFF []  
-    STARTING []  
-
-start request for: [X] == OK   
-    RUNNING []  
-    FATAL []  
-    STOPPED []  
-    STOPPING []  
-    EXITED []  
-    BACKOFF [] if start request on BACKOFF process. It will ingore the request (doesn't try to start again and doesn't reset the number of retries)  
-    STARTING []  
-
 ## Service properties documentation
 
 See supervisord http://supervisord.org/configuration.html#program-x-section-settings

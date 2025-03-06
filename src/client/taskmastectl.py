@@ -11,7 +11,7 @@ def run_client(host="127.0.0.1", port=65432):
             message = input("\033[1mtaskmasterctl>\033[0m (try 'help'): ")
             if not message:
                 continue
-            message = message[:4096]
+            message = message[:8192]
             if is_valid_cmd(message) is False:
                 print_short_help()
                 continue
@@ -23,7 +23,7 @@ def run_client(host="127.0.0.1", port=65432):
                 break
             try:
                 sock.sendall(message.encode())
-                data = sock.recv(4096)
+                data = sock.recv(8192)
                 if not data:
                     print("Server closed the connection, you are disconnected")
                     break

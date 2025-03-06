@@ -28,7 +28,7 @@ schemaConfig = {
                 "numprocs": {
                     "type": "integer",
                     "min": 1,
-                    "max": 9,  # 32
+                    "max": 10,  # 32
                     "nullable": False,
                 },
                 "autostart": {
@@ -77,7 +77,7 @@ schemaConfig = {
                     "nullable": False,
                 },
                 "env": {
-                    "type": "dict",  # need schema ?
+                    "type": "dict",
                     "allow_unknown": True,
                     "valuesrules": {
                         "type": "string",

@@ -1,18 +1,6 @@
-import datetime, subprocess, signal, time
+import datetime, subprocess, signal
 from enum import Enum
 from logger import logger
-
-
-def getLogfile(path: str):
-    try:
-        with open(path, "w") as fd:
-            return fd
-    except Exception as e:
-        logger.error(
-            f"Failed to access log file <{path}>: {e}, using /dev/null instead"
-        )
-        return subprocess.DEVNULL
-
 
 class State(Enum):
     """
@@ -29,7 +17,6 @@ class State(Enum):
     # UNKNOWN = "unknown"  # Not used in taskmaster due to the subject
 
 
-# Inerit from subprocess.Popen
 class Process:
     def __init__(self, name: str, props: dict):
         self.name: str = name
@@ -44,20 +31,6 @@ class Process:
             self.start()
 
     def status(self) -> str:
-        # ls                               BACKOFF   Exited too quickly (process log may have details)
-        # ls                               EXITED    Jan 31 05:26 AM
-        # ping:ping_0                      STOPPED   Jan 31 05:51 AM
-        # ping:ping_1                      RUNNING   pid 62330, uptime 0:31:00
-        # ping:ping_2                      RUNNING   pid 62331, uptime 0:31:00
-        # sleep                            RUNNING   pid 71413, uptime 0:00:01
-        #
-        # sleep                            STARTING
-        # ls                               FATAL     Exited too quickly (process log may have details)
-
-        # print(m)
-        # for serv in self.services.values():
-        #     print(Color.BOLD + f"\t{serv.name}:".ljust(m + 1), end=Color.END + "\n")
-
         message: str = ""
         if self.state == State.STARTING or self.state == State.STOPPING:
             message = (
@@ -97,11 +70,17 @@ class Process:
 
     def start(self) -> str:
         logger.info(f"Start request for: {self.name}")
-        if self.state == State.RUNNING or self.state == State.STARTING or self.state == State.STOPPING:
+        if (
+            self.state == State.RUNNING
+            or self.state == State.STARTING
+            or self.state == State.STOPPING
+        ):
             logger.warning(f"{self.name}: ERROR (already started)")
             return f"{self.name}: ERROR (already started)"
         if self.state == State.BACKOFF:
-            self.state = State.STARTING # To avoid a start by monitoring on backoff state which would cause 2 differents starts
+            self.state = (
+                State.STARTING
+            )  # To avoid a start by monitoring on backoff state which would cause 2 differents starts
         try:
             with open(self.props["stdout"], "a") as f_out, open(
                 self.props["stderr"], "a"
@@ -117,12 +96,11 @@ class Process:
                     cwd=self.props["workingdir"],
                     env=self.props["env"],
                 )
-                # print(self.name, self.proc.pid)
-                # while proc.poll() is None:
-                #     pass
             self.graceful_stop = False
         except Exception as e:
-            logger.critical(f"Unexpected Error encountered while trying to start {self.name}: {e}")
+            logger.critical(
+                f"Unexpected Error encountered while trying to start {self.name}: {e}"
+            )
             self.state = State.FATAL
             self.error_message = str(e)
             self.changedate = datetime.datetime.now()
@@ -133,10 +111,6 @@ class Process:
         self.changedate = datetime.datetime.now()
         logger.info(f"Starting {self.name}")
         return f"{self.name}: starting"
-        # ping:ping_0: started
-        # ping:ping_0: ERROR (already started)
-        # supervisor> start ls
-        # ls: ERROR (spawn error)
 
     def stop(self) -> str:
         logger.info(f"Stop request for: {self.name}")
@@ -174,7 +148,12 @@ class Process:
 
     def kill(self) -> str:
         self.current_retry = 1
-        if self.proc is None or self.state == State.STOPPED or self.state == State.EXITED or self.state == State.FATAL:
+        if (
+            self.proc is None
+            or self.state == State.STOPPED
+            or self.state == State.EXITED
+            or self.state == State.FATAL
+        ):
             logger.error(f"Try to kill {self.name} but not running")
             return f"{self.name}: ERROR (not running)"
         self.proc.kill()

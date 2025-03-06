@@ -133,6 +133,7 @@ class MasterCtl:
                     )
                     messages.append(self.services[name].stop())
                     self.services[name].state = ServiceState.UPDATING
+                    messages.append(f"{name}: restarting (once all its processes terminated)")
                 else:
                     messages.append(f"{name}: process group didn't change")
             # New
@@ -149,7 +150,6 @@ class MasterCtl:
             not in [new_props["name"] for new_props in new_conf["services"]]
         ]
         # Stop and remove the service
-        # TODO: test for removed process that didnt terminated on stop request
         for serv in services_to_remove:
             messages.append(f"{serv}: process group removed -> will stop processes")
             messages.append(self.services[serv].stop())
@@ -200,17 +200,14 @@ class MasterCtl:
             for serv in self.services.values():
                 messages.append(serv.stop())
                 serv.state = ServiceState.RESTARTING
-            # for serv in self.services.values():
-            #     messages.append(serv.start())
+                messages.append(f"{serv.name}: restarting (once all its processes terminated)")
             return os.linesep.join(messages)
         for arg in args:
             if arg in self.services.keys():
                 messages.append(self.services[arg].stop())
                 self.services[arg].state = ServiceState.RESTARTING
+                messages.append(f"{arg}: restarting (once all its processes terminated)")
             else:
                 logger.warning(f"Service not found: {arg}")
                 messages.append(f"Service not found: {arg}")
-        # for arg in args:
-        #     if arg in self.services.keys():
-        #         messages.append(self.services[arg].start())
         return os.linesep.join(messages)
